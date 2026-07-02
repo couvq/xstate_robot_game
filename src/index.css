@@ -10,5 +10,7 @@ table {
 
 td {
   border: 1px solid black;
-  padding: 8px;
+  width: 44px;
+  height: 44px;
+  text-align: center;
 }

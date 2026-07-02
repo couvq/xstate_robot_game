@@ -1,4 +1,5 @@
-import { BOARD_SIZE } from "./machines/gameMachine";
+import { useSelector } from "@xstate/react";
+import { BOARD_SIZE, gameActor } from "./machines/gameMachine";
 
 const robotEmoji = "🤖";
 const candyEmoji = "🍬";
@@ -6,7 +7,13 @@ const candyEmoji = "🍬";
 const board = Array.from({ length: BOARD_SIZE }, () =>
   Array.from({ length: BOARD_SIZE })
 );
+
 const Game = () => {
+  const robotPosition = useSelector(
+    gameActor,
+    (snapshot) => snapshot.context.robotPosition
+  );
+
   return (
     <>
       <div>
@@ -22,7 +29,11 @@ const Game = () => {
           {board.map((row, rowIdx) => (
             <tr>
               {row.map((col, colIdx) => (
-                <td>test</td>
+                <td>
+                  {robotPosition[0] === rowIdx &&
+                    robotPosition[1] === colIdx &&
+                    robotEmoji}
+                </td>
               ))}
             </tr>
           ))}

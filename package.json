@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@xstate/react": "^6.1.0",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "xstate": "^5.32.3"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
