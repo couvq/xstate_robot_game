@@ -1,7 +1,5 @@
 import { assign, createActor, setup } from "xstate";
-
-export const BOARD_SIZE = 5;
-
+import { BOARD_SIZE } from "../constants";
 type GameContext = {
   robotPosition: [number, number];
 };
@@ -48,7 +46,7 @@ const gameMachine = setup({
     },
   },
   actions: {
-    storeMoveToContext: assign({
+    updateRobotPosition: assign({
       robotPosition: ({ context, event }) => getNextPosition(context, event),
     }),
   },
@@ -64,7 +62,7 @@ const gameMachine = setup({
       on: {
         move: {
           guard: "isValidMove",
-          actions: [{ type: "storeMoveToContext" }],
+          actions: [{ type: "updateRobotPosition" }],
         },
       },
     },

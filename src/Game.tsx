@@ -1,6 +1,7 @@
 import { useSelector } from "@xstate/react";
-import { BOARD_SIZE, gameActor } from "./machines/gameMachine";
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
+import { gameActor } from "./machines/gameMachine";
+import { BOARD_SIZE } from "./constants";
 
 const robotEmoji = "🤖";
 const candyEmoji = "🍬";
@@ -15,26 +16,20 @@ const Game = () => {
     (snapshot) => snapshot.context.robotPosition
   );
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp")
-        gameActor.send({ type: "move", direction: "up" });
-      if (e.key === "ArrowDown")
-        gameActor.send({ type: "move", direction: "down" });
-      if (e.key === "ArrowLeft")
-        gameActor.send({ type: "move", direction: "left" });
-      if (e.key === "ArrowRight")
-        gameActor.send({ type: "move", direction: "right" });
-    },
-    [gameActor]
-  );
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "ArrowUp") gameActor.send({ type: "move", direction: "up" });
+    if (e.key === "ArrowDown")
+      gameActor.send({ type: "move", direction: "down" });
+    if (e.key === "ArrowLeft")
+      gameActor.send({ type: "move", direction: "left" });
+    if (e.key === "ArrowRight")
+      gameActor.send({ type: "move", direction: "right" });
+  };
 
   useEffect(() => {
-    console.log("event listener attached!");
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      console.log("event listener removed!");
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [handleKeyDown]);
@@ -52,9 +47,9 @@ const Game = () => {
       <table>
         <tbody>
           {board.map((row, rowIdx) => (
-            <tr>
+            <tr key={rowIdx}>
               {row.map((col, colIdx) => (
-                <td>
+                <td key={colIdx}>
                   {robotPosition[0] === rowIdx &&
                     robotPosition[1] === colIdx &&
                     robotEmoji}
