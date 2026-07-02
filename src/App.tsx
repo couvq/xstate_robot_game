@@ -1,5 +1,5 @@
-const App = () => {
-  return <h1>Hello world</h1>
-};
+import Game from "./Game";
+
+const App = () => <Game />;
 
 export default App;
