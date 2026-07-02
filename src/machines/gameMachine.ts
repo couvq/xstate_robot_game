@@ -8,7 +8,9 @@ type GameContext = {
 
 type Direction = "up" | "down" | "left" | "right";
 
-type GameEvent = { type: "move"; direction: Direction };
+type MoveEvent = { type: "move"; direction: Direction };
+
+type GameEvent = MoveEvent;
 
 const getRandomBoardPosition = (): [number, number] => {
   const row = Math.floor(Math.random() * BOARD_SIZE);
@@ -16,22 +18,38 @@ const getRandomBoardPosition = (): [number, number] => {
   return [row, col];
 };
 
+const getNextPosition = (
+  context: GameContext,
+  event: MoveEvent
+): [number, number] => {
+  const currentRow = context.robotPosition[0];
+  const currentCol = context.robotPosition[1];
+  if (event.direction === "up") return [currentRow - 1, currentCol];
+  if (event.direction === "down") return [currentRow + 1, currentCol];
+  if (event.direction === "left") return [currentRow, currentCol - 1];
+  if (event.direction === "right") return [currentRow, currentCol + 1];
+  return [0, 0];
+};
+
 const gameMachine = setup({
   types: {
     context: {} as GameContext,
     events: {} as GameEvent,
   },
+  guards: {
+    isValidMove: ({ context, event }) => {
+      const potentialNextPosition = getNextPosition(context, event);
+      return (
+        potentialNextPosition[0] >= 0 &&
+        potentialNextPosition[0] < BOARD_SIZE &&
+        potentialNextPosition[1] >= 0 &&
+        potentialNextPosition[1] < BOARD_SIZE
+      );
+    },
+  },
   actions: {
     storeMoveToContext: assign({
-      robotPosition: ({ context, event }) => {
-        const currentRow = context.robotPosition[0];
-        const currentCol = context.robotPosition[1];
-        if (event.direction === "up") return [currentRow - 1, currentCol];
-        if (event.direction === "down") return [currentRow + 1, currentCol];
-        if (event.direction === "left") return [currentRow, currentCol - 1];
-        if (event.direction === "right") return [currentRow, currentCol + 1];
-        return [0, 0];
-      },
+      robotPosition: ({ context, event }) => getNextPosition(context, event),
     }),
   },
 }).createMachine({
@@ -45,6 +63,7 @@ const gameMachine = setup({
     playing: {
       on: {
         move: {
+          guard: "isValidMove",
           actions: [{ type: "storeMoveToContext" }],
         },
       },
