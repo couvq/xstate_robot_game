@@ -8,6 +8,12 @@ type GameContext = {
 
 type GameEvent = { type: "move"; direction: "up" | "down" | "left" | "right" };
 
+const getRandomBoardPosition = (): [number, number] => {
+  const row = Math.floor(Math.random() * BOARD_SIZE);
+  const col = Math.floor(Math.random() * BOARD_SIZE);
+  return [row, col];
+};
+
 const gameMachine = setup({
   types: {
     context: {} as GameContext,
@@ -18,7 +24,7 @@ const gameMachine = setup({
   id: "game",
   initial: "playing",
   context: {
-    robotPosition: [0, 0],
+    robotPosition: getRandomBoardPosition(),
   },
   states: {
     playing: {
