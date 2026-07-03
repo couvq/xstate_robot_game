@@ -89,6 +89,8 @@ const gameMachine = setup({
           candyPosition: getNewCandyPosition(context.robotPosition),
         };
       }
+
+      return {}
     }),
   },
 }).createMachine({
