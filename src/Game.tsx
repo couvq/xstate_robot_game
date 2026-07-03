@@ -16,6 +16,11 @@ const Game = () => {
     (snapshot) => snapshot.context.robotPosition
   );
 
+  const candyPosition = useSelector(
+    gameActor,
+    (snapshot) => snapshot.context.candyPosition
+  );
+
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "ArrowUp") gameActor.send({ type: "move", direction: "up" });
     if (e.key === "ArrowDown")
@@ -48,11 +53,14 @@ const Game = () => {
         <tbody>
           {board.map((row, rowIdx) => (
             <tr key={rowIdx}>
-              {row.map((col, colIdx) => (
+              {row.map((_col, colIdx) => (
                 <td key={colIdx}>
                   {robotPosition[0] === rowIdx &&
                     robotPosition[1] === colIdx &&
                     robotEmoji}
+                  {candyPosition[0] === rowIdx &&
+                    candyPosition[1] === colIdx &&
+                    candyEmoji}
                 </td>
               ))}
             </tr>

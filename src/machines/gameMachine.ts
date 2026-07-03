@@ -2,6 +2,7 @@ import { assign, createActor, setup } from "xstate";
 import { BOARD_SIZE } from "../constants";
 type GameContext = {
   robotPosition: [number, number];
+  candyPosition: [number, number];
 };
 
 type Direction = "up" | "down" | "left" | "right";
@@ -16,6 +17,22 @@ const getRandomBoardPosition = (): [number, number] => {
   return [row, col];
 };
 
+const getInitialCandyPosition = (
+  robotPosition: [number, number]
+): [number, number] => {
+  let candyPosition = getRandomBoardPosition();
+
+  // keep setting candy position until we get one that isn't where the robot is
+  while (
+    candyPosition[0] === robotPosition[0] &&
+    candyPosition[1] === robotPosition[1]
+  ) {
+    candyPosition = getRandomBoardPosition();
+  }
+
+  return candyPosition;
+};
+
 const getNextPosition = (
   context: GameContext,
   event: MoveEvent
@@ -28,6 +45,8 @@ const getNextPosition = (
   if (event.direction === "right") return [currentRow, currentCol + 1];
   return [0, 0];
 };
+
+const initialRobotPosition = getRandomBoardPosition();
 
 const gameMachine = setup({
   types: {
@@ -55,7 +74,8 @@ const gameMachine = setup({
   id: "game",
   initial: "playing",
   context: {
-    robotPosition: getRandomBoardPosition(),
+    robotPosition: initialRobotPosition,
+    candyPosition: getInitialCandyPosition(initialRobotPosition),
   },
   states: {
     playing: {
