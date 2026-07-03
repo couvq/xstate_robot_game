@@ -1,4 +1,4 @@
-import { assign, createActor, setup } from "xstate";
+import { assign, createActor, fromCallback, setup } from "xstate";
 import { BOARD_SIZE } from "../constants";
 
 type Position = [number, number];
@@ -24,9 +24,7 @@ const getRandomBoardPosition = (): Position => {
 const hasCollision = (position1: Position, position2: Position) =>
   position1[0] === position2[0] && position1[1] === position2[1];
 
-const getNewCandyPosition = (
-  robotPosition: Position
-): Position => {
+const getNewCandyPosition = (robotPosition: Position): Position => {
   let candyPosition = getRandomBoardPosition();
 
   // keep setting candy position until we get one that isn't where the robot is
@@ -37,10 +35,7 @@ const getNewCandyPosition = (
   return candyPosition;
 };
 
-const getNextPosition = (
-  context: GameContext,
-  event: MoveEvent
-): Position => {
+const getNextPosition = (context: GameContext, event: MoveEvent): Position => {
   const currentRow = context.robotPosition[0];
   const currentCol = context.robotPosition[1];
 
@@ -61,6 +56,19 @@ const getNextPosition = (
 };
 
 const initialRobotPosition = getRandomBoardPosition();
+
+const keydownActor = fromCallback(({ sendBack }) => {
+  const keyDownHandler = (e: KeyboardEvent) => {
+    if (e.key === "ArrowUp") sendBack({ type: "move", direction: "up" });
+    if (e.key === "ArrowDown") sendBack({ type: "move", direction: "down" });
+    if (e.key === "ArrowLeft") sendBack({ type: "move", direction: "left" });
+    if (e.key === "ArrowRight") sendBack({ type: "move", direction: "right" });
+  };
+
+  window.addEventListener("keydown", keyDownHandler);
+
+  return () => window.removeEventListener("keydown", keyDownHandler);
+});
 
 const gameMachine = setup({
   types: {
@@ -90,8 +98,11 @@ const gameMachine = setup({
         };
       }
 
-      return {}
+      return {};
     }),
+  },
+  actors: {
+    keydownActor,
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswDoAOAbFAngJYB2UAxGgPYBuYA2gAwC6io2VsRALkVSWxAAPRAEYA7AE5MjAGyyALHIBMAVgA0IAoknKZjcQA5RagL7nNJKhDiDUGQRy69+gkQgC0ozdoQLMqgbGZqaa9lh4hKRQjpw8fAJIwogK4j5iAMzi5uZAA */
@@ -101,6 +112,9 @@ const gameMachine = setup({
     robotPosition: initialRobotPosition,
     candyPosition: getNewCandyPosition(initialRobotPosition),
     score: 0,
+  },
+  invoke: {
+    src: "keydownActor",
   },
   states: {
     playing: {

@@ -1,7 +1,6 @@
 import { useSelector } from "@xstate/react";
-import { useEffect } from "react";
-import { gameActor } from "./machines/gameMachine";
 import { BOARD_SIZE } from "./constants";
+import { gameActor } from "./machines/gameMachine";
 
 const robotEmoji = "🤖";
 const candyEmoji = "🍬";
@@ -10,36 +9,16 @@ const board = Array.from({ length: BOARD_SIZE }, () =>
   Array.from({ length: BOARD_SIZE })
 );
 
-const handleKeyDown = (e: KeyboardEvent) => {
-  if (e.key === "ArrowUp") gameActor.send({ type: "move", direction: "up" });
-  if (e.key === "ArrowDown")
-    gameActor.send({ type: "move", direction: "down" });
-  if (e.key === "ArrowLeft")
-    gameActor.send({ type: "move", direction: "left" });
-  if (e.key === "ArrowRight")
-    gameActor.send({ type: "move", direction: "right" });
-};
-
 const Game = () => {
   const robotPosition = useSelector(
     gameActor,
     (snapshot) => snapshot.context.robotPosition
   );
-
   const candyPosition = useSelector(
     gameActor,
     (snapshot) => snapshot.context.candyPosition
   );
-
   const score = useSelector(gameActor, (snapshot) => snapshot.context.score);
-
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
 
   return (
     <>
