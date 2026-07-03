@@ -1,8 +1,11 @@
 import { assign, createActor, setup } from "xstate";
 import { BOARD_SIZE } from "../constants";
+
+type Position = [number, number];
+
 type GameContext = {
-  robotPosition: [number, number];
-  candyPosition: [number, number];
+  robotPosition: Position;
+  candyPosition: Position;
   score: number;
 };
 
@@ -18,16 +21,16 @@ const getRandomBoardPosition = (): [number, number] => {
   return [row, col];
 };
 
-const getInitialCandyPosition = (
+const hasCollision = (position1: Position, position2: Position) =>
+  position1[0] === position2[0] && position1[1] === position2[1];
+
+const getNewCandyPosition = (
   robotPosition: [number, number]
 ): [number, number] => {
   let candyPosition = getRandomBoardPosition();
 
   // keep setting candy position until we get one that isn't where the robot is
-  while (
-    candyPosition[0] === robotPosition[0] &&
-    candyPosition[1] === robotPosition[1]
-  ) {
+  while (hasCollision(robotPosition, candyPosition)) {
     candyPosition = getRandomBoardPosition();
   }
 
@@ -40,11 +43,21 @@ const getNextPosition = (
 ): [number, number] => {
   const currentRow = context.robotPosition[0];
   const currentCol = context.robotPosition[1];
-  if (event.direction === "up") return [currentRow - 1, currentCol];
-  if (event.direction === "down") return [currentRow + 1, currentCol];
-  if (event.direction === "left") return [currentRow, currentCol - 1];
-  if (event.direction === "right") return [currentRow, currentCol + 1];
-  return [0, 0];
+
+  switch (event.direction) {
+    case "up":
+      return [currentRow - 1, currentCol];
+    case "down":
+      return [currentRow + 1, currentCol];
+    case "left":
+      return [currentRow, currentCol - 1];
+    case "right":
+      return [currentRow, currentCol + 1];
+    default:
+      throw new Error(
+        `Receieved an unknown move event: ${JSON.stringify(event)}`
+      );
+  }
 };
 
 const initialRobotPosition = getRandomBoardPosition();
@@ -70,13 +83,10 @@ const gameMachine = setup({
       robotPosition: ({ context, event }) => getNextPosition(context, event),
     }),
     checkCollisions: assign(({ context }) => {
-      if (
-        context.robotPosition[0] === context.candyPosition[0] &&
-        context.robotPosition[1] === context.candyPosition[1]
-      ) {
+      if (hasCollision(context.robotPosition, context.candyPosition)) {
         return {
           score: context.score + 1,
-          candyPosition: getInitialCandyPosition(context.robotPosition),
+          candyPosition: getNewCandyPosition(context.robotPosition),
         };
       }
     }),
@@ -87,7 +97,7 @@ const gameMachine = setup({
   initial: "playing",
   context: {
     robotPosition: initialRobotPosition,
-    candyPosition: getInitialCandyPosition(initialRobotPosition),
+    candyPosition: getNewCandyPosition(initialRobotPosition),
     score: 0,
   },
   states: {
