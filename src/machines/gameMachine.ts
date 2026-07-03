@@ -15,7 +15,7 @@ type MoveEvent = { type: "move"; direction: Direction };
 
 type GameEvent = MoveEvent;
 
-const getRandomBoardPosition = (): [number, number] => {
+const getRandomBoardPosition = (): Position => {
   const row = Math.floor(Math.random() * BOARD_SIZE);
   const col = Math.floor(Math.random() * BOARD_SIZE);
   return [row, col];
@@ -25,8 +25,8 @@ const hasCollision = (position1: Position, position2: Position) =>
   position1[0] === position2[0] && position1[1] === position2[1];
 
 const getNewCandyPosition = (
-  robotPosition: [number, number]
-): [number, number] => {
+  robotPosition: Position
+): Position => {
   let candyPosition = getRandomBoardPosition();
 
   // keep setting candy position until we get one that isn't where the robot is
@@ -40,7 +40,7 @@ const getNewCandyPosition = (
 const getNextPosition = (
   context: GameContext,
   event: MoveEvent
-): [number, number] => {
+): Position => {
   const currentRow = context.robotPosition[0];
   const currentCol = context.robotPosition[1];
 
