@@ -31,6 +31,8 @@ const Game = () => {
     (snapshot) => snapshot.context.candyPosition
   );
 
+  const score = useSelector(gameActor, (snapshot) => snapshot.context.score);
+
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
 
@@ -48,6 +50,7 @@ const Game = () => {
           <br />
           Each candy collected increments your score.
         </p>
+        <p>Score: {score}</p>
       </div>
       <table>
         <tbody>

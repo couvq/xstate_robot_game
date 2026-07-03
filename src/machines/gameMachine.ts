@@ -3,6 +3,7 @@ import { BOARD_SIZE } from "../constants";
 type GameContext = {
   robotPosition: [number, number];
   candyPosition: [number, number];
+  score: number;
 };
 
 type Direction = "up" | "down" | "left" | "right";
@@ -68,6 +69,17 @@ const gameMachine = setup({
     updateRobotPosition: assign({
       robotPosition: ({ context, event }) => getNextPosition(context, event),
     }),
+    checkCollisions: assign(({ context }) => {
+      if (
+        context.robotPosition[0] === context.candyPosition[0] &&
+        context.robotPosition[1] === context.candyPosition[1]
+      ) {
+        return {
+          score: context.score + 1,
+          candyPosition: getInitialCandyPosition(context.robotPosition),
+        };
+      }
+    }),
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswDoAOAbFAngJYB2UAxGgPYBuYA2gAwC6io2VsRALkVSWxAAPRAEYA7AE5MjAGyyALHIBMAVgA0IAoknKZjcQA5RagL7nNJKhDiDUGQRy69+gkQgC0ozdoQLMqgbGZqaa9lh4hKRQjpw8fAJIwogK4j5iAMzi5uZAA */
@@ -76,13 +88,17 @@ const gameMachine = setup({
   context: {
     robotPosition: initialRobotPosition,
     candyPosition: getInitialCandyPosition(initialRobotPosition),
+    score: 0,
   },
   states: {
     playing: {
       on: {
         move: {
           guard: "isValidMove",
-          actions: [{ type: "updateRobotPosition" }],
+          actions: [
+            { type: "updateRobotPosition" },
+            { type: "checkCollisions" },
+          ],
         },
       },
     },
