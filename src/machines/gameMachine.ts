@@ -113,11 +113,11 @@ const gameMachine = setup({
     candyPosition: getNewCandyPosition(initialRobotPosition),
     score: 0,
   },
-  invoke: {
-    src: "keydownActor",
-  },
   states: {
     playing: {
+      invoke: {
+        src: "keydownActor",
+      },
       on: {
         move: {
           guard: "isValidMove",
