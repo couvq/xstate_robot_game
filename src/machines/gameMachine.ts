@@ -96,6 +96,7 @@ const gameMachine = setup({
         potentialNextPosition[1] < BOARD_SIZE
       );
     },
+    isGameOver: ({ context }) => context.timeRemainingSecs <= 0,
   },
   actions: {
     updateRobotPosition: assign({
@@ -121,7 +122,7 @@ const gameMachine = setup({
     gameTimeActor,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswDoAOAbFAngJYB2UAxGgPYBuYA2gAwC6io2VsRALkVSWxAAPRAEYA7AE5MjAGyyALHIBMAVgA0IAoknKZjcQA5RagL7nNJKhDiDUGQRy69+gkQgC0ozdoQLMqgbGZqaa9lh4hKRQjpw8fAJIwogK4j5iAMzi5uZAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswDoAOAbFAngJYB2UAxGgPYBuYA2gAwC6io2VsRALkVSWxAAPRADZGmAKyiATJICMMgJxKA7KNmMZogDQgCieatWYlkgMyLzqpcoAs5gByqAvi72oMOfMTLkAxlQAriTcEFQA7iRMrEggHFy8-IIiCKLymBp2jKJqjpIy5mqqknoGCI4ZdioqkkqO2arVrm56JFQQcIKeYIIJPHwCcakAtPJliCOSpjU1CjKOSqJNrSA93oSkUH2cA8nDiHaqEwjmOZjmdU6MqvKXRfmr6wBmpESwABaQO4mDKYjmQqZOySEqgmTyLTyXT6RCFCQQ2SXRjQkHyMxuNxAA */
   id: "game",
   initial: "playing",
   context: {
@@ -145,7 +146,13 @@ const gameMachine = setup({
           actions: [{ type: "decrementGameTime" }],
         },
       },
+      always: {
+        guard: "isGameOver",
+        target: "finished",
+      },
     },
+
+    finished: {},
   },
 });
 

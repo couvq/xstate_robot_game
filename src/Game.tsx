@@ -10,6 +10,9 @@ const board = Array.from({ length: BOARD_SIZE }, () =>
 );
 
 const Game = () => {
+  const isGameOver = useSelector(gameActor, (snapshot) =>
+    snapshot.matches("finished")
+  );
   const robotPosition = useSelector(
     gameActor,
     (snapshot) => snapshot.context.robotPosition
@@ -35,6 +38,7 @@ const Game = () => {
         </p>
         <p>Score: {score}</p>
         <p>Time remaining: {timeRemainingSecs}</p>
+        {isGameOver ? "Game is finished" : "Game is being played"}
       </div>
       <table>
         <tbody>
