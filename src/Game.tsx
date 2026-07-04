@@ -19,6 +19,10 @@ const Game = () => {
     (snapshot) => snapshot.context.candyPosition
   );
   const score = useSelector(gameActor, (snapshot) => snapshot.context.score);
+  const timeRemainingSecs = useSelector(
+    gameActor,
+    (snaphshot) => snaphshot.context.timeRemainingSecs
+  );
 
   return (
     <>
@@ -30,6 +34,7 @@ const Game = () => {
           Each candy collected increments your score.
         </p>
         <p>Score: {score}</p>
+        <p>Time remaining: {timeRemainingSecs}</p>
       </div>
       <table>
         <tbody>

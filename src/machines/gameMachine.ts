@@ -7,13 +7,16 @@ type GameContext = {
   robotPosition: Position;
   candyPosition: Position;
   score: number;
+  timeRemainingSecs: number; // time left to play the game in seconds
 };
 
 type Direction = "up" | "down" | "left" | "right";
 
 type MoveEvent = { type: "move"; direction: Direction };
 
-type GameEvent = MoveEvent;
+type CountDownEvent = { type: "countdown" };
+
+type GameEvent = MoveEvent | CountDownEvent;
 
 const getRandomBoardPosition = (): Position => {
   const row = Math.floor(Math.random() * BOARD_SIZE);
@@ -70,6 +73,14 @@ const keydownActor = fromCallback(({ sendBack }) => {
   return () => window.removeEventListener("keydown", keyDownHandler);
 });
 
+const gameTimeActor = fromCallback(({ sendBack }) => {
+  let intervalId = setInterval(() => {
+    sendBack({ type: "countdown" });
+  }, 1000);
+
+  return () => clearInterval(intervalId);
+});
+
 const gameMachine = setup({
   types: {
     context: {} as GameContext,
@@ -88,7 +99,8 @@ const gameMachine = setup({
   },
   actions: {
     updateRobotPosition: assign({
-      robotPosition: ({ context, event }) => getNextPosition(context, event),
+      robotPosition: ({ context, event }) =>
+        getNextPosition(context, event as MoveEvent),
     }),
     checkCollisions: assign(({ context }) => {
       if (hasCollision(context.robotPosition, context.candyPosition)) {
@@ -100,9 +112,13 @@ const gameMachine = setup({
 
       return {};
     }),
+    decrementGameTime: assign({
+      timeRemainingSecs: ({ context }) => context.timeRemainingSecs - 1,
+    }),
   },
   actors: {
     keydownActor,
+    gameTimeActor,
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswDoAOAbFAngJYB2UAxGgPYBuYA2gAwC6io2VsRALkVSWxAAPRAEYA7AE5MjAGyyALHIBMAVgA0IAoknKZjcQA5RagL7nNJKhDiDUGQRy69+gkQgC0ozdoQLMqgbGZqaa9lh4hKRQjpw8fAJIwogK4j5iAMzi5uZAA */
@@ -112,12 +128,11 @@ const gameMachine = setup({
     robotPosition: initialRobotPosition,
     candyPosition: getNewCandyPosition(initialRobotPosition),
     score: 0,
+    timeRemainingSecs: 30,
   },
   states: {
     playing: {
-      invoke: {
-        src: "keydownActor",
-      },
+      invoke: [{ src: "keydownActor" }, { src: "gameTimeActor" }],
       on: {
         move: {
           guard: "isValidMove",
@@ -125,6 +140,9 @@ const gameMachine = setup({
             { type: "updateRobotPosition" },
             { type: "checkCollisions" },
           ],
+        },
+        countdown: {
+          actions: [{ type: "decrementGameTime" }],
         },
       },
     },
