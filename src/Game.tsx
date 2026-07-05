@@ -9,10 +9,7 @@ const board = Array.from({ length: BOARD_SIZE }, () =>
   Array.from({ length: BOARD_SIZE })
 );
 
-const Game = () => {
-  const isGameOver = useSelector(gameActor, (snapshot) =>
-    snapshot.matches("finished")
-  );
+const GameScreen = () => {
   const robotPosition = useSelector(
     gameActor,
     (snapshot) => snapshot.context.robotPosition
@@ -38,7 +35,6 @@ const Game = () => {
         </p>
         <p>Score: {score}</p>
         <p>Time remaining: {timeRemainingSecs}</p>
-        {isGameOver ? "Game is finished" : "Game is being played"}
       </div>
       <table>
         <tbody>
@@ -60,6 +56,23 @@ const Game = () => {
       </table>
     </>
   );
+};
+
+const GameOver = () => {
+  return (
+    <>
+      <h1>Game is finished</h1>
+      <button>Restart</button>
+    </>
+  );
+};
+
+const Game = () => {
+  const isGameOver = useSelector(gameActor, (snapshot) =>
+    snapshot.matches("finished")
+  );
+
+  return isGameOver ? <GameOver /> : <GameScreen />;
 };
 
 export default Game;
