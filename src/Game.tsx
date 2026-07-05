@@ -1,6 +1,6 @@
 import { useSelector } from "@xstate/react";
 import { BOARD_SIZE } from "./constants";
-import { gameActor } from "./machines/gameMachine";
+import { gameActor, restartGame } from "./machines/gameMachine";
 
 const robotEmoji = "🤖";
 const candyEmoji = "🍬";
@@ -62,7 +62,7 @@ const GameOver = () => {
   return (
     <>
       <h1>Game is finished</h1>
-      <button>Restart</button>
+      <button onClick={restartGame}>Restart</button>
     </>
   );
 };

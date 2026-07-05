@@ -1,5 +1,5 @@
 import { assign, createActor, fromCallback, setup } from "xstate";
-import { BOARD_SIZE } from "../constants";
+import { BOARD_SIZE, GAME_TIME_SECS, INITIAL_SCORE } from "../constants";
 
 type Position = [number, number];
 
@@ -16,7 +16,9 @@ type MoveEvent = { type: "move"; direction: Direction };
 
 type CountDownEvent = { type: "countdown" };
 
-type GameEvent = MoveEvent | CountDownEvent;
+type RestartEvent = { type: "restart" };
+
+type GameEvent = MoveEvent | CountDownEvent | RestartEvent;
 
 const getRandomBoardPosition = (): Position => {
   const row = Math.floor(Math.random() * BOARD_SIZE);
@@ -88,7 +90,10 @@ const gameMachine = setup({
   },
   guards: {
     isValidMove: ({ context, event }) => {
-      const potentialNextPosition = getNextPosition(context, event);
+      const potentialNextPosition = getNextPosition(
+        context,
+        event as MoveEvent
+      );
       return (
         potentialNextPosition[0] >= 0 &&
         potentialNextPosition[0] < BOARD_SIZE &&
@@ -116,20 +121,30 @@ const gameMachine = setup({
     decrementGameTime: assign({
       timeRemainingSecs: ({ context }) => context.timeRemainingSecs - 1,
     }),
+    resetGame: assign(() => {
+      const robotPos = getRandomBoardPosition();
+      const candyPos = getNewCandyPosition(robotPos);
+      return {
+        robotPosition: robotPos,
+        candyPosition: candyPos,
+        score: INITIAL_SCORE,
+        timeRemainingSecs: GAME_TIME_SECS,
+      };
+    }),
   },
   actors: {
     keydownActor,
     gameTimeActor,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswDoAOAbFAngJYB2UAxGgPYBuYA2gAwC6io2VsRALkVSWxAAPRADZGmAKyiATJICMMgJxKA7KNmMZogDQgCieatWYlkgMyLzqpcoAs5gByqAvi72oMOfMTLkAxlQAriTcEFQA7iRMrEggHFy8-IIiCKLymBp2jKJqjpIy5mqqknoGCI4ZdioqkkqO2arVrm56JFQQcIKeYIIJPHwCcakAtPJliCOSpjU1CjKOSqJNrSA93oSkUH2cA8nDiHaqEwjmOZjmdU6MqvKXRfmr6wBmpESwABaQO4mDKYjmQqZOySEqgmTyLTyXT6RCFCQQ2SXRjQkHyMxuNxAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswDoAOAbFAngJYB2UAxGgPYBuYA2gAwC6io2VsRALkVSWxAAPRADZGmAKyiATABYAnKMmSAjAGZGShQBoQBRKoDsRzAsnrVqgByM76mbfUBfZ3tQYc+YmXIBjKgBXEm4IKgB3EiZWJBAOLl5+QREEUVVMUVE5RlEHI1VJIwUZVT0DBGt0xQUa0SNrbLlJeVd3dCw8QlIKaMF4nj4BWJTHCSNGSwLRYoUjRVEyxHUjSUxVLWX1c0ZrNVFWkA8sADNSIlgAC0hyACc4bhQb7l7Y-sSh0BSHdUx1SQV1HVrJVrOI-osEA45BkNtZltlRNYSq43CASFQIHBBEc+pwBklhogALSlfTE-aoo5eLpkXEJQbJRByIwQzSiX7-dS2RgyOyMVQUtqeU4kc5XCB0-EfYRMv5SRj1HmaBRyVU5VnqH6qYr5SSqmTLIwo5xAA */
   id: "game",
   initial: "playing",
   context: {
     robotPosition: initialRobotPosition,
     candyPosition: getNewCandyPosition(initialRobotPosition),
-    score: 0,
-    timeRemainingSecs: 30,
+    score: INITIAL_SCORE,
+    timeRemainingSecs: GAME_TIME_SECS,
   },
   states: {
     playing: {
@@ -152,10 +167,19 @@ const gameMachine = setup({
       },
     },
 
-    finished: {},
+    finished: {
+      on: {
+        restart: {
+          target: "playing",
+          actions: "resetGame",
+        },
+      },
+    },
   },
 });
 
 export const gameActor = createActor(gameMachine);
 
 gameActor.start();
+
+export const restartGame = () => gameActor.send({ type: "restart" });
