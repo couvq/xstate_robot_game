@@ -60,7 +60,16 @@ const getNextPosition = (context: GameContext, event: MoveEvent): Position => {
   }
 };
 
-const initialRobotPosition = getRandomBoardPosition();
+const createInitialContext = (): GameContext => {
+  const robotPos = getRandomBoardPosition();
+  const candyPos = getNewCandyPosition(robotPos);
+  return {
+    robotPosition: robotPos,
+    candyPosition: candyPos,
+    score: INITIAL_SCORE,
+    timeRemainingSecs: GAME_TIME_SECS,
+  };
+};
 
 const keydownActor = fromCallback(({ sendBack }) => {
   const keyDownHandler = (e: KeyboardEvent) => {
@@ -121,16 +130,7 @@ const gameMachine = setup({
     decrementGameTime: assign({
       timeRemainingSecs: ({ context }) => context.timeRemainingSecs - 1,
     }),
-    resetGame: assign(() => {
-      const robotPos = getRandomBoardPosition();
-      const candyPos = getNewCandyPosition(robotPos);
-      return {
-        robotPosition: robotPos,
-        candyPosition: candyPos,
-        score: INITIAL_SCORE,
-        timeRemainingSecs: GAME_TIME_SECS,
-      };
-    }),
+    resetGame: assign(() => createInitialContext())
   },
   actors: {
     keydownActor,
@@ -140,12 +140,7 @@ const gameMachine = setup({
   /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswDoAOAbFAngJYB2UAxGgPYBuYA2gAwC6io2VsRALkVSWxAAPRADZGmAKyiATABYAnKMmSAjAGZGShQBoQBRKoDsRzAsnrVqgByM76mbfUBfZ3tQYc+YmXIBjKgBXEm4IKgB3EiZWJBAOLl5+QREEUVVMUVE5RlEHI1VJIwUZVT0DBGt0xQUa0SNrbLlJeVd3dCw8QlIKaMF4nj4BWJTHCSNGSwLRYoUjRVEyxHUjSUxVLWX1c0ZrNVFWkA8sADNSIlgAC0hyACc4bhQb7l7Y-sSh0BSHdUx1SQV1HVrJVrOI-osEA45BkNtZltlRNYSq43CASFQIHBBEc+pwBklhogALSlfTE-aoo5eLpkXEJQbJRByIwQzSiX7-dS2RgyOyMVQUtqeU4kc5XCB0-EfYRMv5SRj1HmaBRyVU5VnqH6qYr5SSqmTLIwo5xAA */
   id: "game",
   initial: "playing",
-  context: {
-    robotPosition: initialRobotPosition,
-    candyPosition: getNewCandyPosition(initialRobotPosition),
-    score: INITIAL_SCORE,
-    timeRemainingSecs: GAME_TIME_SECS,
-  },
+  context: createInitialContext(),
   states: {
     playing: {
       invoke: [{ src: "keydownActor" }, { src: "gameTimeActor" }],
