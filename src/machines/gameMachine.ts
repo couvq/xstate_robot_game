@@ -92,7 +92,7 @@ const gameTimeActor = fromCallback(({ sendBack }) => {
   return () => clearInterval(intervalId);
 });
 
-const gameMachine = setup({
+export const gameMachine = setup({
   types: {
     context: {} as GameContext,
     events: {} as GameEvent,
