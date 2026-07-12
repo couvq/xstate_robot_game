@@ -1,9 +1,9 @@
 import { assign, createActor, fromCallback, setup } from "xstate";
 import { BOARD_SIZE, GAME_TIME_SECS, INITIAL_SCORE } from "../constants";
 
-type Position = [number, number];
+export type Position = [number, number];
 
-type GameContext = {
+export type GameContext = {
   robotPosition: Position;
   candyPosition: Position;
   score: number;
@@ -130,7 +130,7 @@ export const gameMachine = setup({
     decrementGameTime: assign({
       timeRemainingSecs: ({ context }) => context.timeRemainingSecs - 1,
     }),
-    resetGame: assign(() => createInitialContext())
+    resetGame: assign(() => createInitialContext()),
   },
   actors: {
     keydownActor,
