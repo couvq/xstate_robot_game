@@ -40,9 +40,9 @@ describe("game machine actor", () => {
 
   test('game should finish once time runs out', () => {
     expect(gameActor.getSnapshot().context.timeRemainingSecs).toBeGreaterThan(0)
-    expect(gameActor.getSnapshot().matches('playing'))
+    expect(gameActor.getSnapshot().matches('playing')).toBe(true)
     vi.advanceTimersByTime(GAME_TIME_SECS * 1000)
-    expect(gameActor.getSnapshot().matches('finished'))
+    expect(gameActor.getSnapshot().matches('finished')).toBe(true)
     expect(gameActor.getSnapshot().context.timeRemainingSecs).toBe(0)
   })
 });
