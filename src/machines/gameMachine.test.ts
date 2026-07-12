@@ -9,15 +9,19 @@ describe("game machine actor", () => {
   let gameActor: ActorRefFrom<typeof gameMachine>;
 
   beforeEach(() => {
-    vi.stubGlobal("window", { addEventListener: () => {} });
+    vi.stubGlobal("window", {
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    });
     vi.useFakeTimers();
     gameActor = createActor(gameMachine);
     gameActor.start();
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
     gameActor.stop();
+    vi.clearAllMocks();
+    vi.useRealTimers();
   });
 
   test("should initially be in playing state with proper initial score and countdown time when game starts", () => {
@@ -64,6 +68,15 @@ describe("game machine actor", () => {
   });
 
   test("should be able to restart game from finished", () => {
-      // TODO
+    expect(gameActor.getSnapshot().context.timeRemainingSecs).toBeGreaterThan(
+      0
+    );
+    expect(gameActor.getSnapshot().matches("playing")).toBe(true);
+    vi.advanceTimersByTime(GAME_TIME_SECS * 1000);
+    expect(gameActor.getSnapshot().matches("finished")).toBe(true);
+    expect(gameActor.getSnapshot().context.timeRemainingSecs).toBe(0);
+
+    gameActor.send({ type: "restart" });
+    expect(gameActor.getSnapshot().matches("playing")).toBe(true);
   });
 });
