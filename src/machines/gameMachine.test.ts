@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createActor, type ActorRefFrom } from "xstate";
 import { gameMachine, type Position } from "./gameMachine";
 import { GAME_TIME_SECS, INITIAL_SCORE } from "../constants";
@@ -8,9 +8,14 @@ describe("game machine actor", () => {
 
   beforeEach(() => {
     vi.stubGlobal("window", { addEventListener: () => {} });
+    vi.useFakeTimers()
     gameActor = createActor(gameMachine);
     gameActor.start();
-  });
+  })
+  
+  afterEach(() => {
+    vi.clearAllMocks();
+  })
 
   test("should initially be in playing state with proper initial score and countdown time when game starts", () => {
     const initialSnapshot = gameActor.getSnapshot();
@@ -27,9 +32,17 @@ describe("game machine actor", () => {
     gameActor.getSnapshot().context.candyPosition = initialCandyPos;
     expect(gameActor.getSnapshot().context.score).toBe(0)
     gameActor.send({ type: "move", direction: "right" }); 
-    expect(gameActor.getSnapshot().context.robotPosition).toEqual(initialCandyPos)
-    // candy position is reset after collision, guaranteed to not be the same position as the robot 
+    expect(gameActor.getSnapshot().context.robotPosition).toEqual(initialCandyPos) // collision
+    // candy position is reset after collision, guaranteed not to be in the same position as the robot 
     expect(gameActor.getSnapshot().context.robotPosition).not.toEqual(gameActor.getSnapshot().context.candyPosition)
     expect(gameActor.getSnapshot().context.score).toBe(1)
   });
+
+  test('game should finish once time runs out', () => {
+    expect(gameActor.getSnapshot().context.timeRemainingSecs).toBeGreaterThan(0)
+    expect(gameActor.getSnapshot().matches('playing'))
+    vi.advanceTimersByTime(GAME_TIME_SECS * 1000)
+    expect(gameActor.getSnapshot().matches('finished'))
+    expect(gameActor.getSnapshot().context.timeRemainingSecs).toBe(0)
+  })
 });
