@@ -6,6 +6,7 @@ export type Position = [number, number];
 export type GameContext = {
   robotPosition: Position;
   candyPosition: Position;
+  wallPositions: Position[];
   score: number;
   timeRemainingSecs: number; // time left to play the game in seconds
 };
@@ -66,6 +67,7 @@ const createInitialContext = (): GameContext => {
   return {
     robotPosition: robotPos,
     candyPosition: candyPos,
+    wallPositions: [[1, 1]],
     score: INITIAL_SCORE,
     timeRemainingSecs: GAME_TIME_SECS,
   };
@@ -103,7 +105,10 @@ export const gameMachine = setup({
         context,
         event as MoveEvent
       );
+
+      const wouldHitWall = context.wallPositions.filter((pos) => hasCollision(pos, potentialNextPosition)).length > 0;
       return (
+        !wouldHitWall && 
         potentialNextPosition[0] >= 0 &&
         potentialNextPosition[0] < BOARD_SIZE &&
         potentialNextPosition[1] >= 0 &&

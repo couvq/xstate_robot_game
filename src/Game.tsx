@@ -1,9 +1,10 @@
 import { useSelector } from "@xstate/react";
 import { BOARD_SIZE } from "./constants";
-import { gameActor, restartGame } from "./machines/gameMachine";
+import { gameActor, restartGame, type Position } from "./machines/gameMachine";
 
 const robotEmoji = "🤖";
 const candyEmoji = "🍬";
+const wallEmoji = "皿";
 
 const board = Array.from({ length: BOARD_SIZE }, () =>
   Array.from({ length: BOARD_SIZE })
@@ -17,6 +18,10 @@ const GameScreen = () => {
   const candyPosition = useSelector(
     gameActor,
     (snapshot) => snapshot.context.candyPosition
+  );
+  const wallPositions = useSelector(
+    gameActor,
+    (snapshot) => snapshot.context.wallPositions
   );
   const score = useSelector(gameActor, (snapshot) => snapshot.context.score);
   const timeRemainingSecs = useSelector(
@@ -48,6 +53,9 @@ const GameScreen = () => {
                   {candyPosition[0] === rowIdx &&
                     candyPosition[1] === colIdx &&
                     candyEmoji}
+                  {wallPositions.filter(
+                    (pos) => pos[0] === rowIdx && pos[1] === colIdx
+                  ).length > 0 && wallEmoji}
                 </td>
               ))}
             </tr>
