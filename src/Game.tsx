@@ -1,6 +1,6 @@
 import { useSelector } from "@xstate/react";
 import { BOARD_SIZE } from "./constants";
-import { gameActor, restartGame, type Position } from "./machines/gameMachine";
+import { gameActor, restartGame } from "./machines/gameMachine";
 
 const robotEmoji = "🤖";
 const candyEmoji = "🍬";
@@ -67,9 +67,12 @@ const GameScreen = () => {
 };
 
 const GameOver = () => {
+  const score = useSelector(gameActor, (snapshot) => snapshot.context.score);
+
   return (
     <>
       <h1>Game is finished</h1>
+      <p>You collected {score} candies.</p>
       <button onClick={restartGame}>Restart</button>
     </>
   );
