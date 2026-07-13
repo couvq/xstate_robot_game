@@ -30,30 +30,43 @@ const getRandomBoardPosition = (): Position => {
 const hasCollision = (position1: Position, position2: Position) =>
   position1[0] === position2[0] && position1[1] === position2[1];
 
-const getInitialRobotPosition = (wallPositions: Position[]) => {
+const collidesWithAny = (pos: Position, positions: Position[]) =>
+  positions.some((p) => hasCollision(pos, p));
+
+/**
+ * Generates starting robot position. Guarantees that robot will appear in a position that does not collide with a wall.
+ * @param wallPositions positions that contain walls
+ * @returns initial robot position
+ */
+const getInitialRobotPosition = (wallPositions: Position[]): Position => {
   let robotPosition = getRandomBoardPosition();
-  let wouldHitWall = wallPositions.some((pos) =>
-    hasCollision(robotPosition, pos)
-  );
+  let wouldHitWall = collidesWithAny(robotPosition, wallPositions);
 
   while (wouldHitWall) {
     robotPosition = getRandomBoardPosition();
-    wouldHitWall = wallPositions.some((pos) =>
-      hasCollision(robotPosition, pos)
-    );
+    wouldHitWall = collidesWithAny(robotPosition, wallPositions);
   }
 
   return robotPosition;
 };
 
-const getNewCandyPosition = (robotPosition: Position, wallPositions: Position[]): Position => {
+/**
+ * Generates a new spawn position for candy. Ensures that the position does not collide with the robot or a wall.
+ * @param robotPosition position of the robot
+ * @param wallPositions positions that contain walls
+ * @returns new candy position
+ */
+const getNewCandyPosition = (
+  robotPosition: Position,
+  wallPositions: Position[]
+): Position => {
   let candyPosition = getRandomBoardPosition();
-  let wouldHitWall = wallPositions.some(pos => hasCollision(pos, candyPosition))
+  let wouldHitWall = collidesWithAny(candyPosition, wallPositions);
 
   // keep setting candy position until we get one that isn't where the robot is or a wall
   while (hasCollision(robotPosition, candyPosition) || wouldHitWall) {
     candyPosition = getRandomBoardPosition();
-    wouldHitWall = wallPositions.some(pos => hasCollision(pos, candyPosition))
+    wouldHitWall = collidesWithAny(candyPosition, wallPositions);
   }
 
   return candyPosition;
@@ -80,8 +93,8 @@ const getNextPosition = (context: GameContext, event: MoveEvent): Position => {
 };
 
 const createInitialContext = (): GameContext => {
-  const wallPositions: Position[] = [[1, 1]]
-  const robotPos = getInitialRobotPosition(wallPositions)
+  const wallPositions: Position[] = [[1, 1]];
+  const robotPos = getInitialRobotPosition(wallPositions);
   const candyPos = getNewCandyPosition(robotPos, wallPositions);
   return {
     robotPosition: robotPos,
@@ -125,10 +138,11 @@ export const gameMachine = setup({
         event as MoveEvent
       );
 
-      const wouldHitWall =
-        context.wallPositions.filter((pos) =>
-          hasCollision(pos, potentialNextPosition)
-        ).length > 0;
+      const wouldHitWall = collidesWithAny(
+        potentialNextPosition,
+        context.wallPositions
+      );
+      
       return (
         !wouldHitWall &&
         potentialNextPosition[0] >= 0 &&
@@ -148,7 +162,10 @@ export const gameMachine = setup({
       if (hasCollision(context.robotPosition, context.candyPosition)) {
         return {
           score: context.score + 1,
-          candyPosition: getNewCandyPosition(context.robotPosition, context.wallPositions),
+          candyPosition: getNewCandyPosition(
+            context.robotPosition,
+            context.wallPositions
+          ),
         };
       }
 
