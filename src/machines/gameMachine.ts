@@ -30,12 +30,30 @@ const getRandomBoardPosition = (): Position => {
 const hasCollision = (position1: Position, position2: Position) =>
   position1[0] === position2[0] && position1[1] === position2[1];
 
-const getNewCandyPosition = (robotPosition: Position): Position => {
-  let candyPosition = getRandomBoardPosition();
+const getInitialRobotPosition = (wallPositions: Position[]) => {
+  let robotPosition = getRandomBoardPosition();
+  let wouldHitWall = wallPositions.some((pos) =>
+    hasCollision(robotPosition, pos)
+  );
 
-  // keep setting candy position until we get one that isn't where the robot is
-  while (hasCollision(robotPosition, candyPosition)) {
+  while (wouldHitWall) {
+    robotPosition = getRandomBoardPosition();
+    wouldHitWall = wallPositions.some((pos) =>
+      hasCollision(robotPosition, pos)
+    );
+  }
+
+  return robotPosition;
+};
+
+const getNewCandyPosition = (robotPosition: Position, wallPositions: Position[]): Position => {
+  let candyPosition = getRandomBoardPosition();
+  let wouldHitWall = wallPositions.some(pos => hasCollision(pos, candyPosition))
+
+  // keep setting candy position until we get one that isn't where the robot is or a wall
+  while (hasCollision(robotPosition, candyPosition) || wouldHitWall) {
     candyPosition = getRandomBoardPosition();
+    wouldHitWall = wallPositions.some(pos => hasCollision(pos, candyPosition))
   }
 
   return candyPosition;
@@ -62,12 +80,13 @@ const getNextPosition = (context: GameContext, event: MoveEvent): Position => {
 };
 
 const createInitialContext = (): GameContext => {
-  const robotPos = getRandomBoardPosition();
-  const candyPos = getNewCandyPosition(robotPos);
+  const wallPositions: Position[] = [[1, 1]]
+  const robotPos = getInitialRobotPosition(wallPositions)
+  const candyPos = getNewCandyPosition(robotPos, wallPositions);
   return {
     robotPosition: robotPos,
     candyPosition: candyPos,
-    wallPositions: [[1, 1]],
+    wallPositions,
     score: INITIAL_SCORE,
     timeRemainingSecs: GAME_TIME_SECS,
   };
@@ -106,9 +125,12 @@ export const gameMachine = setup({
         event as MoveEvent
       );
 
-      const wouldHitWall = context.wallPositions.filter((pos) => hasCollision(pos, potentialNextPosition)).length > 0;
+      const wouldHitWall =
+        context.wallPositions.filter((pos) =>
+          hasCollision(pos, potentialNextPosition)
+        ).length > 0;
       return (
-        !wouldHitWall && 
+        !wouldHitWall &&
         potentialNextPosition[0] >= 0 &&
         potentialNextPosition[0] < BOARD_SIZE &&
         potentialNextPosition[1] >= 0 &&
@@ -126,7 +148,7 @@ export const gameMachine = setup({
       if (hasCollision(context.robotPosition, context.candyPosition)) {
         return {
           score: context.score + 1,
-          candyPosition: getNewCandyPosition(context.robotPosition),
+          candyPosition: getNewCandyPosition(context.robotPosition, context.wallPositions),
         };
       }
 
