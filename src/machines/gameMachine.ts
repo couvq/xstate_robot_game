@@ -61,12 +61,10 @@ const getNewCandyPosition = (
   wallPositions: Position[]
 ): Position => {
   let candyPosition = getRandomBoardPosition();
-  let wouldHitWall = collidesWithAny(candyPosition, wallPositions);
 
   // keep setting candy position until we get one that isn't where the robot is or a wall
-  while (hasCollision(robotPosition, candyPosition) || wouldHitWall) {
+  while (collidesWithAny(candyPosition, [robotPosition, ...wallPositions])) {
     candyPosition = getRandomBoardPosition();
-    wouldHitWall = collidesWithAny(candyPosition, wallPositions);
   }
 
   return candyPosition;
@@ -142,7 +140,7 @@ export const gameMachine = setup({
         potentialNextPosition,
         context.wallPositions
       );
-      
+
       return (
         !wouldHitWall &&
         potentialNextPosition[0] >= 0 &&
