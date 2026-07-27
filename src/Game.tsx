@@ -23,6 +23,7 @@ const GameScreen = () => {
     gameActor,
     (snapshot) => snapshot.context.wallPositions
   );
+  const level = useSelector(gameActor, (snapshot) => snapshot.context.level);
   const score = useSelector(gameActor, (snapshot) => snapshot.context.score);
   const timeRemainingSecs = useSelector(
     gameActor,
@@ -38,6 +39,7 @@ const GameScreen = () => {
           <br />
           Each candy collected increments your score.
         </p>
+        <p>Level: {level}</p>
         <p>Score: {score}</p>
         <p>Time remaining: {timeRemainingSecs}</p>
       </div>

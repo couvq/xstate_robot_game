@@ -8,6 +8,7 @@ export type GameContext = {
   candyPosition: Position;
   wallPositions: Position[];
   score: number;
+  level: number;
   timeRemainingSecs: number; // time left to play the game in seconds
 };
 
@@ -20,6 +21,23 @@ type CountDownEvent = { type: "countdown" };
 type RestartEvent = { type: "restart" };
 
 type GameEvent = MoveEvent | CountDownEvent | RestartEvent;
+
+type LevelConfig = {
+  wallPositions: Position[];
+  // later: enemyPositions?: Position[ (perhaps another data structure?)], etc.
+};
+
+const LEVEL_CONFIGS: LevelConfig[] = [
+  { wallPositions: [[1, 1]] },
+  {
+    wallPositions: [
+      [1, 1],
+      [2, 3],
+      [3, 1],
+    ],
+  },
+  // ...
+];
 
 const getRandomBoardPosition = (): Position => {
   const row = Math.floor(Math.random() * BOARD_SIZE);
@@ -91,13 +109,15 @@ const getNextPosition = (context: GameContext, event: MoveEvent): Position => {
 };
 
 const createInitialContext = (): GameContext => {
-  const wallPositions: Position[] = [[1, 1]];
+  const LEVEL = 1;
+  const wallPositions = LEVEL_CONFIGS[LEVEL].wallPositions;
   const robotPos = getInitialRobotPosition(wallPositions);
   const candyPos = getNewCandyPosition(robotPos, wallPositions);
   return {
     robotPosition: robotPos,
     candyPosition: candyPos,
     wallPositions,
+    level: 1,
     score: INITIAL_SCORE,
     timeRemainingSecs: GAME_TIME_SECS,
   };
