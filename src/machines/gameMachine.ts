@@ -20,7 +20,9 @@ type CountDownEvent = { type: "countdown" };
 
 type RestartEvent = { type: "restart" };
 
-type GameEvent = MoveEvent | CountDownEvent | RestartEvent;
+type LevelUpEvent = { type: "levelUp" };
+
+type GameEvent = MoveEvent | CountDownEvent | RestartEvent | LevelUpEvent;
 
 type LevelConfig = {
   wallPositions: Position[];
@@ -34,6 +36,15 @@ const LEVEL_CONFIGS: LevelConfig[] = [
       [1, 1],
       [2, 3],
       [3, 1],
+    ],
+  },
+  {
+    wallPositions: [
+      [1, 1],
+      [2, 3],
+      [3, 1],
+      [4, 1],
+      [1, 4],
     ],
   },
   // ...
@@ -108,20 +119,24 @@ const getNextPosition = (context: GameContext, event: MoveEvent): Position => {
   }
 };
 
-const createInitialContext = (): GameContext => {
-  const LEVEL = 1;
-  const wallPositions = LEVEL_CONFIGS[LEVEL].wallPositions;
+const createInitialContext = (currentLevel?: number): GameContext => {
+  const wallPositions =
+    currentLevel !== undefined
+      ? LEVEL_CONFIGS[currentLevel].wallPositions
+      : LEVEL_CONFIGS[0].wallPositions;
   const robotPos = getInitialRobotPosition(wallPositions);
   const candyPos = getNewCandyPosition(robotPos, wallPositions);
   return {
     robotPosition: robotPos,
     candyPosition: candyPos,
     wallPositions,
-    level: 1,
+    level: currentLevel ?? 0,
     score: INITIAL_SCORE,
     timeRemainingSecs: GAME_TIME_SECS,
   };
 };
+
+export const levelValid = (level: number) => level < LEVEL_CONFIGS.length;
 
 const keydownActor = fromCallback(({ sendBack }) => {
   const keyDownHandler = (e: KeyboardEvent) => {
@@ -193,13 +208,16 @@ export const gameMachine = setup({
       timeRemainingSecs: ({ context }) => context.timeRemainingSecs - 1,
     }),
     resetGame: assign(() => createInitialContext()),
+    incrementLevel: assign(({ context }) =>
+      createInitialContext(context.level + 1)
+    ),
   },
   actors: {
     keydownActor,
     gameTimeActor,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswDoAOAbFAngJYB2UAxGgPYBuYA2gAwC6io2VsRALkVSWxAAPRADZGmAKyiATABYAnKMmSAjAGZGShQBoQBRKoDsRzAsnrVqgByM76mbfUBfZ3tQYc+YmXIBjKgBXEm4IKgB3EiZWJBAOLl5+QREEUVVMUVE5RlEHI1VJIwUZVT0DBGt0xQUa0SNrbLlJeVd3dCw8QlIKaMF4nj4BWJTHCSNGSwLRYoUjRVEyxHUjSUxVLWX1c0ZrNVFWkA8sADNSIlgAC0hyACc4bhQb7l7Y-sSh0BSHdUx1SQV1HVrJVrOI-osEA45BkNtZltlRNYSq43CASFQIHBBEc+pwBklhogALSlfTE-aoo5eLpkXEJQbJRByIwQzSiX7-dS2RgyOyMVQUtqeU4kc5XCB0-EfYRMv5SRj1HmaBRyVU5VnqH6qYr5SSqmTLIwo5xAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswDoAOAbFAngJYB2UAxGgPYBuYA2gAwC6io2VsRALkVSWxAAPRADZGmAKyiATABYAnKMmSAjAGZGShQBoQBRKoDsRzAsnrVqgByM76mbfUBfZ3tQYc+YmXIBjKgBXEm4IKgB3EiZWJBAOLl5+QREEUVVMUVE5RlEHI1VJIwUZVT0DBGt0xQUa0SNrbLlJeVd3dCw8QlIKaMF4nj4BWJTHCSNGSwLRYoUjRVEyxHUjSUxVLWX1c0ZrNVFWkA8sADNSIlgAC0hyACc4bhQb7l7Y-sSh0BSHdUx1SQV1HVrJVrOI-osEA45BkNtZltlRNYSgcjphTiRzlcIOQSGAhNwADJgOi4F7sTgDJLDRByTJrcyaOQyGSFdRyBoQmRGH6qYr5SRyJnLIyuNwgEhUCBwQRHPoU97JRAAWlK+mVokwdi1qiZcPUfzkIrFqM6PigcoSg0VCENEM0Gr+ANsjBk2v2xvaaLOl0gFspH2ENL+UkY9RdmgUgoRdv19K5BUFMmFoucQA */
   id: "game",
   initial: "playing",
   context: createInitialContext(),
@@ -230,6 +248,11 @@ export const gameMachine = setup({
           target: "playing",
           actions: "resetGame",
         },
+
+        levelUp: {
+          target: "playing",
+          actions: "incrementLevel",
+        },
       },
     },
   },
@@ -240,3 +263,4 @@ export const gameActor = createActor(gameMachine);
 gameActor.start();
 
 export const restartGame = () => gameActor.send({ type: "restart" });
+export const levelUp = () => gameActor.send({ type: "levelUp" });
