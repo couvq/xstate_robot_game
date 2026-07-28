@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createActor, type ActorRefFrom } from "xstate";
-import { gameMachine, type Position } from "./gameMachine";
+import { gameMachine } from "./gameMachine";
 import { GAME_TIME_SECS, INITIAL_SCORE } from "../constants";
+import type { Position } from "../types";
 
 const initialRobotPos: Position = [0, 0];
 
+  // @vitest-environment jsdom
 describe("game machine actor", () => {
   let gameActor: ActorRefFrom<typeof gameMachine>;
 
