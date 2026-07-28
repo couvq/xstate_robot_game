@@ -1,11 +1,7 @@
 import { useSelector } from "@xstate/react";
 import { BOARD_SIZE } from "./constants";
-import {
-  gameActor,
-  levelUp,
-  levelValid,
-  restartGame,
-} from "./machines/gameMachine";
+import { gameActor, levelUp, restartGame } from "./machines/gameMachine";
+import { levelValid } from "./utils/levelConfigs";
 
 const robotEmoji = "🤖";
 const candyEmoji = "🍬";

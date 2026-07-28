@@ -1,123 +1,9 @@
-import { assign, createActor, fromCallback, setup } from "xstate";
+import { assign, createActor, setup } from "xstate";
 import { BOARD_SIZE, GAME_TIME_SECS, INITIAL_SCORE } from "../constants";
-
-export type Position = [number, number];
-
-export type GameContext = {
-  robotPosition: Position;
-  candyPosition: Position;
-  wallPositions: Position[];
-  score: number;
-  level: number;
-  timeRemainingSecs: number; // time left to play the game in seconds
-};
-
-type Direction = "up" | "down" | "left" | "right";
-
-type MoveEvent = { type: "move"; direction: Direction };
-
-type CountDownEvent = { type: "countdown" };
-
-type RestartEvent = { type: "restart" };
-
-type LevelUpEvent = { type: "levelUp" };
-
-type GameEvent = MoveEvent | CountDownEvent | RestartEvent | LevelUpEvent;
-
-type LevelConfig = {
-  wallPositions: Position[];
-  // later: enemyPositions?: Position[ (perhaps another data structure?)], etc.
-};
-
-const LEVEL_CONFIGS: LevelConfig[] = [
-  { wallPositions: [[1, 1]] },
-  {
-    wallPositions: [
-      [1, 1],
-      [2, 3],
-      [3, 1],
-    ],
-  },
-  {
-    wallPositions: [
-      [1, 1],
-      [2, 3],
-      [3, 1],
-      [4, 1],
-      [1, 4],
-    ],
-  },
-  // ...
-];
-
-const getRandomBoardPosition = (): Position => {
-  const row = Math.floor(Math.random() * BOARD_SIZE);
-  const col = Math.floor(Math.random() * BOARD_SIZE);
-  return [row, col];
-};
-
-const hasCollision = (position1: Position, position2: Position) =>
-  position1[0] === position2[0] && position1[1] === position2[1];
-
-const collidesWithAny = (pos: Position, positions: Position[]) =>
-  positions.some((p) => hasCollision(pos, p));
-
-/**
- * Generates starting robot position. Guarantees that robot will appear in a position that does not collide with a wall.
- * @param wallPositions positions that contain walls
- * @returns initial robot position
- */
-const getInitialRobotPosition = (wallPositions: Position[]): Position => {
-  let robotPosition = getRandomBoardPosition();
-  let wouldHitWall = collidesWithAny(robotPosition, wallPositions);
-
-  while (wouldHitWall) {
-    robotPosition = getRandomBoardPosition();
-    wouldHitWall = collidesWithAny(robotPosition, wallPositions);
-  }
-
-  return robotPosition;
-};
-
-/**
- * Generates a new spawn position for candy. Ensures that the position does not collide with the robot or a wall.
- * @param robotPosition position of the robot
- * @param wallPositions positions that contain walls
- * @returns new candy position
- */
-const getNewCandyPosition = (
-  robotPosition: Position,
-  wallPositions: Position[]
-): Position => {
-  let candyPosition = getRandomBoardPosition();
-
-  // keep setting candy position until we get one that isn't where the robot is or a wall
-  while (collidesWithAny(candyPosition, [robotPosition, ...wallPositions])) {
-    candyPosition = getRandomBoardPosition();
-  }
-
-  return candyPosition;
-};
-
-const getNextPosition = (context: GameContext, event: MoveEvent): Position => {
-  const currentRow = context.robotPosition[0];
-  const currentCol = context.robotPosition[1];
-
-  switch (event.direction) {
-    case "up":
-      return [currentRow - 1, currentCol];
-    case "down":
-      return [currentRow + 1, currentCol];
-    case "left":
-      return [currentRow, currentCol - 1];
-    case "right":
-      return [currentRow, currentCol + 1];
-    default:
-      throw new Error(
-        `Receieved an unknown move event: ${JSON.stringify(event)}`
-      );
-  }
-};
+import type { GameContext, GameEvent, MoveEvent } from "../types";
+import { LEVEL_CONFIGS, levelValid } from "../utils/levelConfigs";
+import { collidesWithAny, getInitialRobotPosition, getNewCandyPosition, getNextPosition, hasCollision } from "../utils/positionUtils";
+import { gameTimeActor, keydownActor } from "../actors";
 
 const createInitialContext = (currentLevel?: number): GameContext => {
   const wallPositions =
@@ -135,29 +21,6 @@ const createInitialContext = (currentLevel?: number): GameContext => {
     timeRemainingSecs: GAME_TIME_SECS,
   };
 };
-
-export const levelValid = (level: number) => level < LEVEL_CONFIGS.length;
-
-const keydownActor = fromCallback(({ sendBack }) => {
-  const keyDownHandler = (e: KeyboardEvent) => {
-    if (e.key === "ArrowUp") sendBack({ type: "move", direction: "up" });
-    if (e.key === "ArrowDown") sendBack({ type: "move", direction: "down" });
-    if (e.key === "ArrowLeft") sendBack({ type: "move", direction: "left" });
-    if (e.key === "ArrowRight") sendBack({ type: "move", direction: "right" });
-  };
-
-  window.addEventListener("keydown", keyDownHandler);
-
-  return () => window.removeEventListener("keydown", keyDownHandler);
-});
-
-const gameTimeActor = fromCallback(({ sendBack }) => {
-  let intervalId = setInterval(() => {
-    sendBack({ type: "countdown" });
-  }, 1000);
-
-  return () => clearInterval(intervalId);
-});
 
 export const gameMachine = setup({
   types: {
