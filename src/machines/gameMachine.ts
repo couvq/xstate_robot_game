@@ -185,6 +185,7 @@ export const gameMachine = setup({
       );
     },
     isGameOver: ({ context }) => context.timeRemainingSecs <= 0,
+    isNextLevelValid: ({ context }) => levelValid(context.level + 1),
   },
   actions: {
     updateRobotPosition: assign({
@@ -252,6 +253,7 @@ export const gameMachine = setup({
         levelUp: {
           target: "playing",
           actions: "incrementLevel",
+          guard: "isNextLevelValid",
         },
       },
     },

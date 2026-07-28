@@ -75,13 +75,16 @@ const GameScreen = () => {
 
 const GameOver = () => {
   const score = useSelector(gameActor, (snapshot) => snapshot.context.score);
+  const isNextLevelValid = useSelector(gameActor, (snapshot) =>
+    levelValid(snapshot.context.level + 1)
+  );
 
   return (
     <>
       <h1>Game is finished</h1>
       <p>You collected {score} candies.</p>
       <button onClick={restartGame}>Restart</button>
-      <button onClick={levelUp}>Next level</button>
+      {isNextLevelValid && <button onClick={levelUp}>Next level</button>}
     </>
   );
 };
