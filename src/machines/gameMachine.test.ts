@@ -40,7 +40,7 @@ describe("game machine actor", () => {
     gameActor.getSnapshot().context.robotPosition = initialRobotPos;
     gameActor.getSnapshot().context.candyPosition = initialCandyPos;
     expect(gameActor.getSnapshot().context.score).toBe(INITIAL_SCORE);
-    gameActor.send({ type: "move", direction: "right" });
+    gameActor.send({ type: "moveRobot", direction: "right" });
     expect(gameActor.getSnapshot().context.robotPosition).toEqual(
       initialCandyPos
     ); // collision
@@ -53,8 +53,8 @@ describe("game machine actor", () => {
 
   test("should not allow moving off the board", () => {
     gameActor.getSnapshot().context.robotPosition = initialRobotPos; // upper left corner
-    gameActor.send({ type: "move", direction: "left" }); // non-valid move
-    gameActor.send({ type: "move", direction: "up" }); // non-valid move
+    gameActor.send({ type: "moveRobot", direction: "left" }); // non-valid move
+    gameActor.send({ type: "moveRobot", direction: "up" }); // non-valid move
     expect(gameActor.getSnapshot().context.robotPosition).toEqual(
       initialRobotPos
     );
