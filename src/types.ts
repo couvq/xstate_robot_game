@@ -11,7 +11,7 @@ export type GameContext = {
 
 type Direction = "up" | "down" | "left" | "right";
 
-export type MoveEvent = { type: "move"; direction: Direction };
+export type MoveRobotEvent = { type: "moveRobot"; direction: Direction };
 
 type CountDownEvent = { type: "countdown" };
 
@@ -19,7 +19,7 @@ type RestartEvent = { type: "restart" };
 
 type LevelUpEvent = { type: "levelUp" };
 
-export type GameEvent = MoveEvent | CountDownEvent | RestartEvent | LevelUpEvent;
+export type GameEvent = MoveRobotEvent | CountDownEvent | RestartEvent | LevelUpEvent;
 
 export type LevelConfig = {
   wallPositions: Position[];

@@ -1,11 +1,11 @@
 import { fromCallback } from "xstate";
 
-export const keydownActor = fromCallback(({ sendBack }) => {
+export const robotActor = fromCallback(({ sendBack }) => {
   const keyDownHandler = (e: KeyboardEvent) => {
-    if (e.key === "ArrowUp") sendBack({ type: "move", direction: "up" });
-    if (e.key === "ArrowDown") sendBack({ type: "move", direction: "down" });
-    if (e.key === "ArrowLeft") sendBack({ type: "move", direction: "left" });
-    if (e.key === "ArrowRight") sendBack({ type: "move", direction: "right" });
+    if (e.key === "ArrowUp") sendBack({ type: "moveRobot", direction: "up" });
+    if (e.key === "ArrowDown") sendBack({ type: "moveRobot", direction: "down" });
+    if (e.key === "ArrowLeft") sendBack({ type: "moveRobot", direction: "left" });
+    if (e.key === "ArrowRight") sendBack({ type: "moveRobot", direction: "right" });
   };
 
   window.addEventListener("keydown", keyDownHandler);

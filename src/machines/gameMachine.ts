@@ -1,9 +1,9 @@
 import { assign, createActor, setup } from "xstate";
+import { gameTimeActor, robotActor } from "../actors";
 import { BOARD_SIZE, GAME_TIME_SECS, INITIAL_SCORE } from "../constants";
-import type { GameContext, GameEvent, MoveEvent } from "../types";
+import type { GameContext, GameEvent, MoveRobotEvent } from "../types";
 import { LEVEL_CONFIGS, levelValid } from "../utils/levelConfigs";
 import { collidesWithAny, getInitialRobotPosition, getNewCandyPosition, getNextPosition, hasCollision } from "../utils/positionUtils";
-import { gameTimeActor, keydownActor } from "../actors";
 
 const createInitialContext = (currentLevel?: number): GameContext => {
   const wallPositions =
@@ -31,7 +31,7 @@ export const gameMachine = setup({
     isValidMove: ({ context, event }) => {
       const potentialNextPosition = getNextPosition(
         context,
-        event as MoveEvent
+        event as MoveRobotEvent
       );
 
       const wouldHitWall = collidesWithAny(
@@ -53,7 +53,7 @@ export const gameMachine = setup({
   actions: {
     updateRobotPosition: assign({
       robotPosition: ({ context, event }) =>
-        getNextPosition(context, event as MoveEvent),
+        getNextPosition(context, event as MoveRobotEvent),
     }),
     checkCollisions: assign(({ context }) => {
       if (hasCollision(context.robotPosition, context.candyPosition)) {
@@ -77,7 +77,7 @@ export const gameMachine = setup({
     ),
   },
   actors: {
-    keydownActor,
+    robotActor,
     gameTimeActor,
   },
 }).createMachine({
@@ -87,9 +87,9 @@ export const gameMachine = setup({
   context: createInitialContext(),
   states: {
     playing: {
-      invoke: [{ src: "keydownActor" }, { src: "gameTimeActor" }],
+      invoke: [{ src: "robotActor" }, { src: "gameTimeActor" }],
       on: {
-        move: {
+        moveRobot: {
           guard: "isValidMove",
           actions: [
             { type: "updateRobotPosition" },
