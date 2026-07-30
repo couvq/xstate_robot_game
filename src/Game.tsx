@@ -16,10 +16,9 @@ const GameScreen = () => {
     gameActor,
     (snapshot) => snapshot.context.robotPosition
   );
-  const candyPosition = useSelector(
-    gameActor,
-    (snapshot) => snapshot.context.candyPosition
-  );
+  const candyPositions = useSelector(gameActor, (snapshot) => [
+    ...snapshot.context.candies.values(),
+  ]);
   const wallPositions = useSelector(
     gameActor,
     (snapshot) => snapshot.context.wallPositions
@@ -53,9 +52,12 @@ const GameScreen = () => {
                   {robotPosition[0] === rowIdx &&
                     robotPosition[1] === colIdx &&
                     robotEmoji}
-                  {candyPosition[0] === rowIdx &&
-                    candyPosition[1] === colIdx &&
-                    candyEmoji}
+                  {candyPositions.map(
+                    (candyPosition) =>
+                      candyPosition[0] === rowIdx &&
+                      candyPosition[1] === colIdx &&
+                      candyEmoji
+                  )}
                   {wallPositions.filter(
                     (pos) => pos[0] === rowIdx && pos[1] === colIdx
                   ).length > 0 && wallEmoji}

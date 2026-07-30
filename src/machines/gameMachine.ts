@@ -1,9 +1,15 @@
-import { assign, createActor, setup } from "xstate";
-import { gameTimeActor, robotActor } from "../actors";
+import { assign, createActor, setup, stopChild } from "xstate";
+import { candyActor, gameTimeActor, robotActor } from "../actors";
 import { BOARD_SIZE, GAME_TIME_SECS, INITIAL_SCORE } from "../constants";
 import type { GameContext, GameEvent, MoveRobotEvent } from "../types";
 import { LEVEL_CONFIGS, levelValid } from "../utils/levelConfigs";
-import { collidesWithAny, getInitialRobotPosition, getNewCandyPosition, getNextPosition, hasCollision } from "../utils/positionUtils";
+import {
+  collidesWithAny,
+  getInitialRobotPosition,
+  getNewCandyPosition,
+  getNextPosition,
+  hasCollision,
+} from "../utils/positionUtils";
 
 const createInitialContext = (currentLevel?: number): GameContext => {
   const wallPositions =
@@ -11,10 +17,10 @@ const createInitialContext = (currentLevel?: number): GameContext => {
       ? LEVEL_CONFIGS[currentLevel].wallPositions
       : LEVEL_CONFIGS[0].wallPositions;
   const robotPos = getInitialRobotPosition(wallPositions);
-  const candyPos = getNewCandyPosition(robotPos, wallPositions);
+
   return {
     robotPosition: robotPos,
-    candyPosition: candyPos,
+    candies: new Map(),
     wallPositions,
     level: currentLevel ?? 0,
     score: INITIAL_SCORE,
@@ -55,18 +61,22 @@ export const gameMachine = setup({
       robotPosition: ({ context, event }) =>
         getNextPosition(context, event as MoveRobotEvent),
     }),
-    checkCollisions: assign(({ context }) => {
-      if (hasCollision(context.robotPosition, context.candyPosition)) {
-        return {
-          score: context.score + 1,
-          candyPosition: getNewCandyPosition(
-            context.robotPosition,
-            context.wallPositions
-          ),
-        };
+    checkCollisions: assign(({ context, spawn }) => {
+      let score = context.score;
+      const nextCandies = new Map(context.candies);
+      for (const [candyRef, candyPosition] of context.candies.entries()) {
+        if (hasCollision(context.robotPosition, candyPosition)) {
+          score += 1;
+          nextCandies.delete(candyRef);
+          stopChild(candyRef);
+          nextCandies.set(
+            spawn(candyActor, {}),
+            getNewCandyPosition(context.robotPosition, context.wallPositions)
+          );
+        }
       }
 
-      return {};
+      return { score, candies: nextCandies };
     }),
     decrementGameTime: assign({
       timeRemainingSecs: ({ context }) => context.timeRemainingSecs - 1,
@@ -75,6 +85,13 @@ export const gameMachine = setup({
     incrementLevel: assign(({ context }) =>
       createInitialContext(context.level + 1)
     ),
+    spawnCandy: assign({
+      candies: ({ context, spawn }) =>
+        context.candies.set(
+          spawn(candyActor, {}),
+          getNewCandyPosition(context.robotPosition, context.wallPositions)
+        ),
+    }),
   },
   actors: {
     robotActor,
@@ -85,6 +102,7 @@ export const gameMachine = setup({
   id: "game",
   initial: "playing",
   context: createInitialContext(),
+  entry: [{ type: "spawnCandy" }],
   states: {
     playing: {
       invoke: [{ src: "robotActor" }, { src: "gameTimeActor" }],

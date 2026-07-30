@@ -1,5 +1,5 @@
 import { BOARD_SIZE } from "../constants";
-import type { GameContext, MoveEvent, Position } from "../types";
+import type { Direction, GameContext, Position } from "../types";
 
 export const getRandomBoardPosition = (): Position => {
   const row = Math.floor(Math.random() * BOARD_SIZE);
@@ -50,7 +50,7 @@ export const getNewCandyPosition = (
   return candyPosition;
 };
 
-export const getNextPosition = (context: GameContext, event: MoveEvent): Position => {
+export const getNextPosition = (context: GameContext, event: { direction: Direction}): Position => {
   const currentRow = context.robotPosition[0];
   const currentCol = context.robotPosition[1];
 
