@@ -15,6 +15,11 @@ export type GameContext = {
 export type Direction = "up" | "down" | "left" | "right";
 
 export type MoveRobotEvent = { type: "moveRobot"; direction: Direction };
+export type MoveCandyEvent = {
+  type: "moveCandy";
+  direction: Direction;
+  candyRef: ActorRefFromLogic<typeof candyActor>;
+};
 
 type CountDownEvent = { type: "countdown" };
 
@@ -24,6 +29,7 @@ type LevelUpEvent = { type: "levelUp" };
 
 export type GameEvent =
   | MoveRobotEvent
+  | MoveCandyEvent
   | CountDownEvent
   | RestartEvent
   | LevelUpEvent;

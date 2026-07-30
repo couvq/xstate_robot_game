@@ -1,7 +1,12 @@
 import { assign, createActor, setup, stopChild, type Spawner } from "xstate";
 import { candyActor, gameTimeActor, robotActor } from "../actors";
 import { BOARD_SIZE, GAME_TIME_SECS, INITIAL_SCORE } from "../constants";
-import type { GameContext, GameEvent, MoveRobotEvent } from "../types";
+import type {
+  GameContext,
+  GameEvent,
+  MoveCandyEvent,
+  MoveRobotEvent,
+} from "../types";
 import { LEVEL_CONFIGS, levelValid } from "../utils/levelConfigs";
 import {
   collidesWithAny,
@@ -42,7 +47,7 @@ export const gameMachine = setup({
   guards: {
     isValidRobotMove: ({ context, event }) => {
       const potentialNextPosition = getNextPosition(
-        context,
+        context.robotPosition,
         event as MoveRobotEvent
       );
 
@@ -59,13 +64,49 @@ export const gameMachine = setup({
         potentialNextPosition[1] < BOARD_SIZE
       );
     },
+    isValidCandyMove: ({ context, event }) => {
+      const potentialNextPosition = getNextPosition(
+        context.candies.get(event.candyRef),
+        event as MoveCandyEvent
+      );
+
+      const candyPositionsOtherThanSelf = [...context.candies.entries()]
+        .filter(([candyRef]) => candyRef != event.candyRef)
+        .map(([_, position]) => position);
+
+      const wouldHitWallRobotOrCandy = collidesWithAny(potentialNextPosition, [
+        ...context.wallPositions,
+        context.robotPosition,
+        ...candyPositionsOtherThanSelf,
+      ]);
+
+      return (
+        !wouldHitWallRobotOrCandy &&
+        potentialNextPosition[0] >= 0 &&
+        potentialNextPosition[0] < BOARD_SIZE &&
+        potentialNextPosition[1] >= 0 &&
+        potentialNextPosition[1] < BOARD_SIZE
+      );
+    },
     isGameOver: ({ context }) => context.timeRemainingSecs <= 0,
     isNextLevelValid: ({ context }) => levelValid(context.level + 1),
   },
   actions: {
     updateRobotPosition: assign({
       robotPosition: ({ context, event }) =>
-        getNextPosition(context, event as MoveRobotEvent),
+        getNextPosition(context.robotPosition, event as MoveRobotEvent),
+    }),
+    updateCandyPosition: assign(({ context, event }) => {
+      const nextCandyPosition = getNextPosition(
+        context.candies.get(event.candyRef),
+        event as MoveCandyEvent
+      );
+
+      const newCandies = new Map(context.candies);
+      newCandies.set(event.candyRef, nextCandyPosition);
+      return {
+        candies: newCandies,
+      };
     }),
     checkRobotCollisions: assign(({ context, spawn }) => {
       let score = context.score;
@@ -121,6 +162,12 @@ export const gameMachine = setup({
             { type: "checkRobotCollisions" },
           ],
         },
+
+        moveCandy: {
+          guard: "isValidCandyMove",
+          actions: [{ type: "updateCandyPosition" }],
+        },
+
         countdown: {
           actions: [{ type: "decrementGameTime" }],
         },

@@ -18,7 +18,9 @@ export const collidesWithAny = (pos: Position, positions: Position[]) =>
  * @param wallPositions positions that contain walls
  * @returns initial robot position
  */
-export const getInitialRobotPosition = (wallPositions: Position[]): Position => {
+export const getInitialRobotPosition = (
+  wallPositions: Position[]
+): Position => {
   let robotPosition = getRandomBoardPosition();
   let wouldHitWall = collidesWithAny(robotPosition, wallPositions);
 
@@ -50,9 +52,12 @@ export const getNewCandyPosition = (
   return candyPosition;
 };
 
-export const getNextPosition = (context: GameContext, event: { direction: Direction}): Position => {
-  const currentRow = context.robotPosition[0];
-  const currentCol = context.robotPosition[1];
+export const getNextPosition = (
+  currentPosition: Position,
+  event: { direction: Direction }
+): Position => {
+  const currentRow = currentPosition[0];
+  const currentCol = currentPosition[1];
 
   switch (event.direction) {
     case "up":

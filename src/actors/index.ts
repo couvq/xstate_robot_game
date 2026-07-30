@@ -25,11 +25,11 @@ export const gameTimeActor = fromCallback(({ sendBack }) => {
   return () => clearInterval(intervalId);
 });
 
-export const candyActor = fromCallback(({ sendBack }) => {
+export const candyActor = fromCallback(({ sendBack, self }) => {
   let intervalId = setInterval(() => {
     const randomDirection =
       positions[Math.floor(Math.random() * positions.length)];
-    sendBack({ type: "moveCandy", direction: randomDirection });
+    sendBack({ type: "moveCandy", direction: randomDirection, candyRef: self });
   }, 1000);
 
   return () => clearInterval(intervalId);
