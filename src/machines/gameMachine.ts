@@ -2,18 +2,15 @@ import {
   assign,
   createActor,
   enqueueActions,
-  setup,
-  type ActionFunction,
-  type Spawner,
+  setup
 } from "xstate";
 import { candyActor, gameTimeActor, robotActor } from "../actors";
 import { BOARD_SIZE, GAME_TIME_SECS, INITIAL_SCORE } from "../constants";
 import type {
-  EnqueueArg,
   GameContext,
   GameEvent,
   MoveCandyEvent,
-  MoveRobotEvent,
+  MoveRobotEvent
 } from "../types";
 import { createIdGenerator } from "../utils/idGenerator";
 import { LEVEL_CONFIGS, levelValid } from "../utils/levelConfigs";
@@ -40,7 +37,7 @@ const createInitialContext = (
   const candies = new Map([
     [newCandyId, getNewCandyPosition(robotPos, wallPositions)],
   ]);
-  spawnChild("candyActor", { input: { id: newCandyId } });
+  spawnChild("candyActor", { input: { id: newCandyId }, id: newCandyId });
 
   return {
     robotPosition: robotPos,
@@ -137,7 +134,7 @@ export const gameMachine = setup({
             nextCandyId,
             getNewCandyPosition(context.robotPosition, context.wallPositions)
           );
-          enqueue.spawnChild("candyActor", { input: { id: nextCandyId } });
+          enqueue.spawnChild("candyActor", { input: { id: nextCandyId }, id: nextCandyId });
         }
       }
 

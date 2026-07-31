@@ -27,20 +27,20 @@ export const gameTimeActor = fromCallback(({ sendBack }) => {
 
 export const candyActor = fromCallback<EventObject, { id: string }>(
   ({ sendBack, input }) => {
-    const id = input.id;
+    const { id } = input;
     let intervalId = setInterval(() => {
       const randomDirection =
         positions[Math.floor(Math.random() * positions.length)];
       sendBack({
         type: "moveCandy",
         direction: randomDirection,
-        candyId: id
+        candyId: id,
       });
     }, 1000);
 
     return () => {
-      console.log(`candy with id: ${id} was collected`)
-      clearInterval(intervalId)
+      console.log(`candy with id: ${id} was collected`);
+      clearInterval(intervalId);
     };
   }
 );
