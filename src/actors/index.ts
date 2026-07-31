@@ -1,4 +1,4 @@
-import { fromCallback } from "xstate";
+import { fromCallback, type EventObject } from "xstate";
 import { positions } from "../constants";
 
 export const robotActor = fromCallback(({ sendBack }) => {
@@ -25,12 +25,19 @@ export const gameTimeActor = fromCallback(({ sendBack }) => {
   return () => clearInterval(intervalId);
 });
 
-export const candyActor = fromCallback(({ sendBack, self }) => {
-  let intervalId = setInterval(() => {
-    const randomDirection =
-      positions[Math.floor(Math.random() * positions.length)];
-    sendBack({ type: "moveCandy", direction: randomDirection, candyRef: self });
-  }, 1000);
+export const candyActor = fromCallback<EventObject, { id: string }>(
+  ({ sendBack, input }) => {
+    const id = input.id;
+    let intervalId = setInterval(() => {
+      const randomDirection =
+        positions[Math.floor(Math.random() * positions.length)];
+      sendBack({
+        type: "moveCandy",
+        direction: randomDirection,
+        candyId: id
+      });
+    }, 1000);
 
-  return () => clearInterval(intervalId);
-});
+    return () => clearInterval(intervalId);
+  }
+);

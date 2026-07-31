@@ -1,11 +1,8 @@
-import type { ActorRefFromLogic } from "xstate";
-import type { candyActor } from "./actors";
-
 export type Position = [number, number];
 
 export type GameContext = {
   robotPosition: Position;
-  candies: Map<ActorRefFromLogic<typeof candyActor>, Position>;
+  candies: Map<string, Position>; // candyId -> position
   wallPositions: Position[];
   score: number;
   level: number;
@@ -18,7 +15,7 @@ export type MoveRobotEvent = { type: "moveRobot"; direction: Direction };
 export type MoveCandyEvent = {
   type: "moveCandy";
   direction: Direction;
-  candyRef: ActorRefFromLogic<typeof candyActor>;
+  candyId: string;
 };
 
 type CountDownEvent = { type: "countdown" };

@@ -1,12 +1,21 @@
-import { assign, createActor, setup, stopChild, type Spawner } from "xstate";
+import {
+  assign,
+  createActor,
+  enqueueActions,
+  setup,
+  type ActionFunction,
+  type Spawner,
+} from "xstate";
 import { candyActor, gameTimeActor, robotActor } from "../actors";
 import { BOARD_SIZE, GAME_TIME_SECS, INITIAL_SCORE } from "../constants";
 import type {
+  EnqueueArg,
   GameContext,
   GameEvent,
   MoveCandyEvent,
   MoveRobotEvent,
 } from "../types";
+import { createIdGenerator } from "../utils/idGenerator";
 import { LEVEL_CONFIGS, levelValid } from "../utils/levelConfigs";
 import {
   collidesWithAny,
@@ -16,8 +25,10 @@ import {
   hasCollision,
 } from "../utils/positionUtils";
 
+const generateCandyId = createIdGenerator();
+
 const createInitialContext = (
-  spawn: Spawner<any>,
+  spawnChild: any,
   currentLevel?: number
 ): GameContext => {
   const wallPositions =
@@ -25,9 +36,11 @@ const createInitialContext = (
       ? LEVEL_CONFIGS[currentLevel].wallPositions
       : LEVEL_CONFIGS[0].wallPositions;
   const robotPos = getInitialRobotPosition(wallPositions);
+  const newCandyId = generateCandyId();
   const candies = new Map([
-    [spawn("candyActor", {}), getNewCandyPosition(robotPos, wallPositions)],
+    [newCandyId, getNewCandyPosition(robotPos, wallPositions)],
   ]);
+  spawnChild("candyActor", { input: { id: newCandyId } });
 
   return {
     robotPosition: robotPos,
@@ -65,13 +78,16 @@ export const gameMachine = setup({
       );
     },
     isValidCandyMove: ({ context, event }) => {
+      const currentCandyPosition = context.candies.get(event.candyId);
+      if (!currentCandyPosition) return false;
+
       const potentialNextPosition = getNextPosition(
-        context.candies.get(event.candyRef),
+        currentCandyPosition,
         event as MoveCandyEvent
       );
 
       const candyPositionsOtherThanSelf = [...context.candies.entries()]
-        .filter(([candyRef]) => candyRef != event.candyRef)
+        .filter(([candyId]) => candyId != event.candyId)
         .map(([_, position]) => position);
 
       const wouldHitWallRobotOrCandy = collidesWithAny(potentialNextPosition, [
@@ -98,28 +114,30 @@ export const gameMachine = setup({
     }),
     updateCandyPosition: assign(({ context, event }) => {
       const nextCandyPosition = getNextPosition(
-        context.candies.get(event.candyRef),
+        context.candies.get(event.candyId),
         event as MoveCandyEvent
       );
 
       const newCandies = new Map(context.candies);
-      newCandies.set(event.candyRef, nextCandyPosition);
+      newCandies.set(event.candyId, nextCandyPosition);
       return {
         candies: newCandies,
       };
     }),
-    checkRobotCollisions: assign(({ context, spawn }) => {
+    checkRobotCollisions: enqueueActions(({ context, enqueue }) => {
       let score = context.score;
       const nextCandies = new Map(context.candies);
-      for (const [candyRef, candyPosition] of context.candies.entries()) {
+      for (const [candyId, candyPosition] of context.candies.entries()) {
         if (hasCollision(context.robotPosition, candyPosition)) {
           score += 1;
-          nextCandies.delete(candyRef);
-          stopChild(candyRef);
+          nextCandies.delete(candyId);
+          enqueue.stopChild(candyId);
+          const nextCandyId = generateCandyId();
           nextCandies.set(
-            spawn("candyActor", {}),
+            nextCandyId,
             getNewCandyPosition(context.robotPosition, context.wallPositions)
           );
+          enqueue.spawnChild("candyActor", { input: { id: nextCandyId } });
         }
       }
 
@@ -128,17 +146,18 @@ export const gameMachine = setup({
     decrementGameTime: assign({
       timeRemainingSecs: ({ context }) => context.timeRemainingSecs - 1,
     }),
-    resetGame: assign(({ context, spawn }) => {
-      [...context.candies.keys()].forEach((candyActorRef) =>
-        stopChild(candyActorRef)
+    resetGame: enqueueActions(({ context, enqueue }) => {
+      [...context.candies.keys()].forEach((candyId) =>
+        enqueue.stopChild(candyId)
       );
-      return createInitialContext(spawn);
+      // TODO: refactor createInitinalContext to use spawnChild rather than spawn
+      return createInitialContext(enqueue.spawnChild);
     }),
-    incrementLevel: assign(({ context, spawn }) => {
-      [...context.candies.keys()].forEach((candyActorRef) =>
-        stopChild(candyActorRef)
+    incrementLevel: enqueueActions(({ context, enqueue }) => {
+      [...context.candies.keys()].forEach((candyId) =>
+        enqueue.stopChild(candyId)
       );
-      return createInitialContext(spawn, context.level + 1);
+      return createInitialContext(enqueue.spawnChild, context.level + 1);
     }),
   },
   actors: {
@@ -198,6 +217,8 @@ export const gameMachine = setup({
 export const gameActor = createActor(gameMachine);
 
 gameActor.start();
+
+gameActor.subscribe((snapshot) => console.log(snapshot.context));
 
 export const restartGame = () => gameActor.send({ type: "restart" });
 export const levelUp = () => gameActor.send({ type: "levelUp" });
