@@ -141,7 +141,7 @@ export const gameMachine = setup({
         }
       }
 
-      return { score, candies: nextCandies };
+      enqueue.assign({ score, candies: nextCandies });
     }),
     decrementGameTime: assign({
       timeRemainingSecs: ({ context }) => context.timeRemainingSecs - 1,
@@ -150,13 +150,15 @@ export const gameMachine = setup({
       [...context.candies.keys()].forEach((candyId) =>
         enqueue.stopChild(candyId)
       );
-      enqueue.assign(createInitialContext(enqueue.spawnChild))
+      enqueue.assign(createInitialContext(enqueue.spawnChild));
     }),
     incrementLevel: enqueueActions(({ context, enqueue }) => {
       [...context.candies.keys()].forEach((candyId) =>
         enqueue.stopChild(candyId)
       );
-      enqueue.assign(createInitialContext(enqueue.spawnChild, context.level + 1))
+      enqueue.assign(
+        createInitialContext(enqueue.spawnChild, context.level + 1)
+      );
     }),
   },
   actors: {
@@ -216,8 +218,6 @@ export const gameMachine = setup({
 export const gameActor = createActor(gameMachine);
 
 gameActor.start();
-
-gameActor.subscribe((snapshot) => console.log(snapshot.context));
 
 export const restartGame = () => gameActor.send({ type: "restart" });
 export const levelUp = () => gameActor.send({ type: "levelUp" });
