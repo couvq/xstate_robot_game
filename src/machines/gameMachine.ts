@@ -150,14 +150,13 @@ export const gameMachine = setup({
       [...context.candies.keys()].forEach((candyId) =>
         enqueue.stopChild(candyId)
       );
-      // TODO: refactor createInitinalContext to use spawnChild rather than spawn
-      return createInitialContext(enqueue.spawnChild);
+      enqueue.assign(createInitialContext(enqueue.spawnChild))
     }),
     incrementLevel: enqueueActions(({ context, enqueue }) => {
       [...context.candies.keys()].forEach((candyId) =>
         enqueue.stopChild(candyId)
       );
-      return createInitialContext(enqueue.spawnChild, context.level + 1);
+      enqueue.assign(createInitialContext(enqueue.spawnChild, context.level + 1))
     }),
   },
   actors: {
