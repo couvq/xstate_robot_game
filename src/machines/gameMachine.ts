@@ -33,11 +33,11 @@ const createInitialContext = (
       ? LEVEL_CONFIGS[currentLevel].wallPositions
       : LEVEL_CONFIGS[0].wallPositions;
   const robotPos = getInitialRobotPosition(wallPositions);
-  const newCandyId = generateCandyId();
-  const candies = new Map([
-    [newCandyId, getNewCandyPosition(robotPos, wallPositions)],
-  ]);
-  spawnChild("candyActor", { input: { id: newCandyId }, id: newCandyId });
+  const newCandyIds = [generateCandyId(), generateCandyId()];
+  const candies = new Map(
+    newCandyIds.map(id => [id, getNewCandyPosition(robotPos, wallPositions)])
+  );
+  newCandyIds.forEach(candyId => spawnChild("candyActor", { input: { id: candyId }, id: candyId }))
 
   return {
     robotPosition: robotPos,
