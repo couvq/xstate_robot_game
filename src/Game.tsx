@@ -6,6 +6,7 @@ import { levelValid } from "./utils/levelConfigs";
 const robotEmoji = "🤖";
 const candyEmoji = "🍬";
 const wallEmoji = "皿";
+const enemyEmoji = "🥷";
 
 const board = Array.from({ length: BOARD_SIZE }, () =>
   Array.from({ length: BOARD_SIZE })
@@ -18,6 +19,9 @@ const GameScreen = () => {
   );
   const candyPositions = useSelector(gameActor, (snapshot) => [
     ...snapshot.context.candies.values(),
+  ]);
+  const enemyPositions = useSelector(gameActor, (snapshot) => [
+    ...snapshot.context.enemies.values(),
   ]);
   const wallPositions = useSelector(
     gameActor,
@@ -57,6 +61,12 @@ const GameScreen = () => {
                       candyPosition[0] === rowIdx &&
                       candyPosition[1] === colIdx &&
                       candyEmoji
+                  )}
+                  {enemyPositions.map(
+                    (enemyPosition) =>
+                      enemyPosition[0] === rowIdx &&
+                      enemyPosition[1] === colIdx &&
+                      enemyEmoji
                   )}
                   {wallPositions.filter(
                     (pos) => pos[0] === rowIdx && pos[1] === colIdx
