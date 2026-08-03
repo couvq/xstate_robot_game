@@ -33,23 +33,53 @@ export const getInitialRobotPosition = (
 };
 
 /**
- * Generates a new spawn position for candy. Ensures that the position does not collide with the robot or a wall.
+ * Generates a new spawn position for candy. Ensures that the position does not collide with the robot, a wall or an enemy.
  * @param robotPosition position of the robot
  * @param wallPositions positions that contain walls
+ * @param enemyPositions: positions that contain enemies
+ *
  * @returns new candy position
  */
 export const getNewCandyPosition = (
   robotPosition: Position,
-  wallPositions: Position[]
+  wallPositions: Position[],
+  enemyPositions: Position[]
 ): Position => {
   let candyPosition = getRandomBoardPosition();
 
-  // keep setting candy position until we get one that isn't where the robot is or a wall
-  while (collidesWithAny(candyPosition, [robotPosition, ...wallPositions])) {
+  // keep setting candy position until we get one that isn't where the robot, a wall or an enemy
+  while (
+    collidesWithAny(candyPosition, [
+      robotPosition,
+      ...wallPositions,
+      ...enemyPositions,
+    ])
+  ) {
     candyPosition = getRandomBoardPosition();
   }
 
   return candyPosition;
+};
+
+// enemies can't spawn in positions that robots, candies, or walls occupy
+export const getNewEnemyPosition = (
+  robotPosition: Position,
+  candyPositions: Position[],
+  wallPositions: Position[]
+): Position => {
+  let enemyPosition = getRandomBoardPosition();
+
+  while (
+    collidesWithAny(enemyPosition, [
+      ...candyPositions,
+      ...wallPositions,
+      robotPosition,
+    ])
+  ) {
+    enemyPosition = getRandomBoardPosition();
+  }
+
+  return enemyPosition;
 };
 
 export const getNextPosition = (

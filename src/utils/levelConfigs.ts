@@ -1,13 +1,14 @@
 import type { LevelConfig } from "../types";
 
 export const LEVEL_CONFIGS: LevelConfig[] = [
-  { wallPositions: [[1, 1]] },
+  { wallPositions: [[1, 1]], initialEnemyPositions: [0, 0] },
   {
     wallPositions: [
       [1, 1],
       [2, 3],
       [3, 1],
     ],
+    initialEnemyPositions: [0, 0],
   },
   {
     wallPositions: [
@@ -17,6 +18,7 @@ export const LEVEL_CONFIGS: LevelConfig[] = [
       [4, 1],
       [1, 4],
     ],
+    initialEnemyPositions: [0, 0],
   },
   // ...
 ];

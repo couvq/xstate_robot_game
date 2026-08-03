@@ -1,16 +1,12 @@
-import {
-  assign,
-  createActor,
-  enqueueActions,
-  setup
-} from "xstate";
-import { candyActor, gameTimeActor, robotActor } from "../actors";
+import { assign, createActor, enqueueActions, setup } from "xstate";
+import { candyActor, enemyActor, gameTimeActor, robotActor } from "../actors";
 import { BOARD_SIZE, GAME_TIME_SECS, INITIAL_SCORE } from "../constants";
 import type {
   GameContext,
   GameEvent,
   MoveCandyEvent,
-  MoveRobotEvent
+  MoveEnemyEvent,
+  MoveRobotEvent,
 } from "../types";
 import { createIdGenerator } from "../utils/idGenerator";
 import { LEVEL_CONFIGS, levelValid } from "../utils/levelConfigs";
@@ -18,31 +14,46 @@ import {
   collidesWithAny,
   getInitialRobotPosition,
   getNewCandyPosition,
+  getNewEnemyPosition,
   getNextPosition,
   hasCollision,
 } from "../utils/positionUtils";
 
-const generateCandyId = createIdGenerator();
+const generateCandyId = createIdGenerator("candy");
+const generateEnemyId = createIdGenerator("enemy");
 
 const createInitialContext = (
   spawnChild: any,
   currentLevel?: number
 ): GameContext => {
-  const wallPositions =
+  const levelConfig =
     currentLevel !== undefined
-      ? LEVEL_CONFIGS[currentLevel].wallPositions
-      : LEVEL_CONFIGS[0].wallPositions;
-  const robotPos = getInitialRobotPosition(wallPositions);
+      ? LEVEL_CONFIGS[currentLevel]
+      : LEVEL_CONFIGS[0];
+  const robotPos = getInitialRobotPosition(levelConfig.wallPositions);
   const newCandyIds = [generateCandyId(), generateCandyId()];
   const candies = new Map(
-    newCandyIds.map(id => [id, getNewCandyPosition(robotPos, wallPositions)])
+    newCandyIds.map((id) => [id, getNewCandyPosition(robotPos, levelConfig.wallPositions, levelConfig.initialEnemyPositions)])
   );
-  newCandyIds.forEach(candyId => spawnChild("candyActor", { input: { id: candyId }, id: candyId }))
+  const newEnemyIds = [generateEnemyId()];
+  const enemies = new Map(
+    newEnemyIds.map((id) => [
+      id,
+      getNewEnemyPosition(robotPos, [...candies.values()], levelConfig.wallPositions),
+    ])
+  );
+  newCandyIds.forEach((candyId) =>
+    spawnChild("candyActor", { input: { id: candyId }, id: candyId })
+  );
+  newEnemyIds.forEach((enemyId) =>
+    spawnChild("enemyActor", { input: { id: enemyId }, id: enemyId })
+  );
 
   return {
     robotPosition: robotPos,
     candies,
-    wallPositions,
+    enemies,
+    wallPositions: levelConfig.wallPositions,
     level: currentLevel ?? 0,
     score: INITIAL_SCORE,
     timeRemainingSecs: GAME_TIME_SECS,
@@ -83,18 +94,50 @@ export const gameMachine = setup({
         event as MoveCandyEvent
       );
 
+      const enemyPositions = [...context.enemies.values()];
+
       const candyPositionsOtherThanSelf = [...context.candies.entries()]
         .filter(([candyId]) => candyId != event.candyId)
         .map(([_, position]) => position);
 
-      const wouldHitWallRobotOrCandy = collidesWithAny(potentialNextPosition, [
+      const wouldHitWallRobotEnemyOrCandy = collidesWithAny(potentialNextPosition, [
         ...context.wallPositions,
         context.robotPosition,
+        ...enemyPositions,
         ...candyPositionsOtherThanSelf,
       ]);
 
       return (
-        !wouldHitWallRobotOrCandy &&
+        !wouldHitWallRobotEnemyOrCandy &&
+        potentialNextPosition[0] >= 0 &&
+        potentialNextPosition[0] < BOARD_SIZE &&
+        potentialNextPosition[1] >= 0 &&
+        potentialNextPosition[1] < BOARD_SIZE
+      );
+    },
+    isValidEnemyMove: ({ context, event }) => {
+      const currentEnemyPosition = context.enemies.get(event.enemyId);
+      if (!currentEnemyPosition) return false;
+
+      const potentialNextPosition = getNextPosition(
+        currentEnemyPosition,
+        event as MoveEnemyEvent
+      );
+
+      const candyPositions = [...context.candies.values()];
+
+      const enemyPositionsOtherThanSelf = [...context.enemies.entries()]
+        .filter(([enemyId]) => enemyId != event.enemyId)
+        .map(([_, position]) => position);
+
+      const wouldHitWallCandyOrEnemy = collidesWithAny(potentialNextPosition, [
+        ...context.wallPositions,
+        ...candyPositions,
+        ...enemyPositionsOtherThanSelf,
+      ]);
+
+      return (
+        !wouldHitWallCandyOrEnemy &&
         potentialNextPosition[0] >= 0 &&
         potentialNextPosition[0] < BOARD_SIZE &&
         potentialNextPosition[1] >= 0 &&
@@ -108,6 +151,18 @@ export const gameMachine = setup({
     updateRobotPosition: assign({
       robotPosition: ({ context, event }) =>
         getNextPosition(context.robotPosition, event as MoveRobotEvent),
+    }),
+    updateEnemyPosition: assign(({ context, event }) => {
+      const nextEnemyPosition = getNextPosition(
+        context.enemies.get(event.enemyId),
+        event as MoveEnemyEvent
+      );
+
+      const newEnemies = new Map(context.enemies);
+      newEnemies.set(event.enemyId, nextEnemyPosition);
+      return {
+        enemies: newEnemies,
+      };
     }),
     updateCandyPosition: assign(({ context, event }) => {
       const nextCandyPosition = getNextPosition(
@@ -132,9 +187,12 @@ export const gameMachine = setup({
           const nextCandyId = generateCandyId();
           nextCandies.set(
             nextCandyId,
-            getNewCandyPosition(context.robotPosition, context.wallPositions)
+            getNewCandyPosition(context.robotPosition, context.wallPositions, [...context.enemies.values()])
           );
-          enqueue.spawnChild("candyActor", { input: { id: nextCandyId }, id: nextCandyId });
+          enqueue.spawnChild("candyActor", {
+            input: { id: nextCandyId },
+            id: nextCandyId,
+          });
         }
       }
 
@@ -162,6 +220,7 @@ export const gameMachine = setup({
     gameTimeActor,
     robotActor,
     candyActor,
+    enemyActor,
   },
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswDoAOAbFAngJYB2UAxGgPYBuYA2gAwC6io2VsRALkVSWxAAPRADZGmAKyiATABYAnKMmSAjAGZGShQBoQBRKoDsRzAsnrVqgByM76mbfUBfZ3tQYc+YmXIBjKgBXEm4IKgB3EiZWJBAOLl5+QREEUVVMUVE5RlEHI1VJIwUZVT0DBGt0xQUa0SNrbLlJeVd3dCw8QlIKaMF4nj4BWJTHCSNGSwLRYoUjRVEyxHUjSUxVLWX1c0ZrNVFWkA8sADNSIlgAC0hyACc4bhQb7l7Y-sSh0BSHdUx1SQV1HVrJVrOI-osEA45BkNtZltlRNYSgcjphTiRzlcIOQSGAhNwADJgOi4F7sTgDJLDRByTJrcyaOQyGSFdRyBoQmRGH6qYr5SRyJnLIyuNwgEhUCBwQRHPoU97JRAAWlK+mVokwdi1qiZcPUfzkIrFqM6PigcoSg0VCENEM0Gr+ANsjBk2v2xvaaLOl0gFspH2ENL+UkY9RdmgUgoRdv19K5BUFMmFoucQA */
@@ -183,6 +242,12 @@ export const gameMachine = setup({
         moveCandy: {
           guard: "isValidCandyMove",
           actions: [{ type: "updateCandyPosition" }],
+        },
+
+        moveEnemy: {
+          guard: "isValidEnemyMove",
+          actions: [{ type: "updateEnemyPosition" }],
+          // TODO: need a checkEnemyCollision action
         },
 
         countdown: {

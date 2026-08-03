@@ -3,6 +3,7 @@ export type Position = [number, number];
 export type GameContext = {
   robotPosition: Position;
   candies: Map<string, Position>; // candyId -> position
+  enemies: Map<string, Position>; // enemyId -> position
   wallPositions: Position[];
   score: number;
   level: number;
@@ -18,6 +19,12 @@ export type MoveCandyEvent = {
   candyId: string;
 };
 
+export type MoveEnemyEvent = {
+  type: "moveEnemy";
+  direction: Direction;
+  enemyId: string;
+};
+
 type CountDownEvent = { type: "countdown" };
 
 type RestartEvent = { type: "restart" };
@@ -27,11 +34,12 @@ type LevelUpEvent = { type: "levelUp" };
 export type GameEvent =
   | MoveRobotEvent
   | MoveCandyEvent
+  | MoveEnemyEvent
   | CountDownEvent
   | RestartEvent
   | LevelUpEvent;
 
 export type LevelConfig = {
   wallPositions: Position[];
-  // later: enemyPositions?: Position[ (perhaps another data structure?)], etc.
+  initialEnemyPositions: Position[];
 };

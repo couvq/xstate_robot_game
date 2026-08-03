@@ -1,4 +1,4 @@
-export const createIdGenerator = (): (() => string) => {
+export const createIdGenerator = (prefix: string): (() => string) => {
   let id = 0;
-  return () => String(id++)
+  return () => `${prefix}_${id++}`;
 };
