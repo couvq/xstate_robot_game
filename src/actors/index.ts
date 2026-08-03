@@ -38,9 +38,6 @@ export const candyActor = fromCallback<EventObject, { id: string }>(
       });
     }, 1000);
 
-    return () => {
-      console.log(`candy with id: ${id} was collected`);
-      clearInterval(intervalId);
-    };
+    return () => clearInterval(intervalId);
   }
 );
